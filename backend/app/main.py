@@ -5,23 +5,49 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Add the project root to sys.path to allow imports from the 'backend' package
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if ROOT_PATH not in sys.path:
+    sys.path.append(ROOT_PATH)
 
 from backend.app.core.logger import logger
 
+# Track successfully imported routers in a dictionary to avoid scope issues
+ROUTERS = {}
+
+# Try to import routers
 try:
-    from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile
+    # First try relative to the current app structure
+    try:
+        from app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant
+    except ImportError:
+        # Fallback to absolute backend import
+        from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant
+    
+    # Success! Add to our map
+    ROUTERS['jobs'] = jobs
+    ROUTERS['stats'] = stats
+    ROUTERS['scrapers'] = scrapers
+    ROUTERS['chat'] = chat
+    ROUTERS['generators'] = generators
+    ROUTERS['profile'] = profile
+    ROUTERS['assistant'] = assistant
+    
     logger.info("✅ All routers successfully imported")
 except ImportError as e:
     logger.error(f"❌ Critical Import Error: {e}")
-    # Don't fail here, let include_router handle it safely
-    import traceback
-    logger.debug(traceback.format_exc())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Job Search Automation Backend Starting...")
     
+    # Start the Sequential Queue Worker
+    try:
+        from backend.app.core.queue_manager import queue_manager
+        queue_manager.start_worker()
+        logger.info("✅ Sequential Queue Worker initialized")
+    except Exception as e:
+        logger.error(f"❌ Failed to start Queue Worker: {e}")
+
     # Initialize Telegram Bot
     try:
         from backend.app.services.notifications.telegram_bot import TelegramNotifier
@@ -59,35 +85,30 @@ async def log_requests(request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 try:
-    logger.info("📦 Loading routers...")
-    if 'jobs' in locals():
-        app.include_router(jobs.router)
-    if 'stats' in locals():
-        app.include_router(stats.router)
-    if 'scrapers' in locals():
-        app.include_router(scrapers.router)
-    if 'chat' in locals():
-        app.include_router(chat.router)
-    if 'generators' in locals():
-        app.include_router(generators.router)
-    if 'profile' in locals():
-        app.include_router(profile.router)
-    logger.info("✅ Routers check complete")
-except Exception as e:
-    logger.error(f"❌ Error including routers: {e}")
-    # Print which ones are defined
-    for name in ["jobs", "stats", "scrapers", "chat", "generators", "profile"]:
-        if name in locals() or name in globals():
-            print(f"  - {name} is defined")
+    logger.info("📦 Registering routers...")
+    registered_count = 0
+    for name, module in ROUTERS.items():
+        if module and hasattr(module, 'router'):
+            app.include_router(module.router)
+            # Add WebSocket route explicitly if it's the assistant
+            if name == "assistant":
+                 logger.info(f"  ✅ Router '{name}' registered with WebSocket /assistant/ws")
+            else:
+                 logger.info(f"  ✅ Router '{name}' registered")
+            registered_count += 1
         else:
-            print(f"  - {name} is NOT defined")
+            logger.warning(f"  ⚠️ Router '{name}' NOT found or has no .router")
+            
+    logger.info(f"✅ Route registration complete. {registered_count} routers active: {list(ROUTERS.keys())}")
+except Exception as e:
+    logger.error(f"❌ Unexpected error during router registration: {e}")
 
 @app.get("/")
 async def root():
@@ -96,6 +117,17 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/debug/routes")
+async def list_routes():
+    routes = []
+    for route in app.routes:
+        routes.append({
+            "path": route.path,
+            "name": route.name,
+            "methods": list(route.methods) if hasattr(route, "methods") else "WebSocket"
+        })
+    return routes
 
 if __name__ == "__main__":
     import uvicorn

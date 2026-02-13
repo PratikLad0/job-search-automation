@@ -5,10 +5,10 @@ import aiofiles
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from backend.app.db.database import JobDatabase
 from backend.app.db.models import UserProfile
-from backend.app.services.parsers.cv_parser import parse_cv
 from backend.app.core import config
 from backend.app.api.dependencies import get_db
-from backend.app.core.logger import logger
+from backend.app.core.queue_manager import queue_manager
+from backend.app.services.ai.tasks import process_profile_update
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -64,9 +64,7 @@ async def delete_profile(db: JobDatabase = Depends(get_db)):
 
 @router.post("/upload-resume", response_model=dict)
 async def upload_resume(file: UploadFile = File(...)):
-    """Upload resume and parse it to populate profile."""
-    # Sanitize filename to prevent path traversal and collisions
-    # We use UUID to ensure uniqueness and strip the filename to prevent traversal
+    """Upload resume and queue a background task to populate profile."""
     file_ext = Path(file.filename).suffix
     if file_ext.lower() not in [".pdf", ".docx", ".txt"]:
         raise HTTPException(status_code=400, detail="Invalid file type. Only PDF, DOCX, and TXT are allowed.")
@@ -77,52 +75,20 @@ async def upload_resume(file: UploadFile = File(...)):
     
     file_path = uploads_dir / unique_filename
     
-    # Verify the path is within the uploads directory (extra safety)
-    if not str(file_path.resolve()).startswith(str(uploads_dir.resolve())):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    
     # Async file writing
     async with aiofiles.open(file_path, "wb") as buffer:
         content = await file.read()
         await buffer.write(content)
         
-    # Parse resume
-    try:
-        logger.info(f"📄 Parsing resume: {file_path}")
-        cv_data = parse_cv(file_path, force_refresh=True)
-        logger.info(f"✅ Resume parsed successfully for: {cv_data.name}")
-    except Exception as e:
-        logger.error(f"❌ Failed to parse resume: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to parse resume: {str(e)}")
-        
-    # Convert CVData to Profile format
-    profile_update = {
-        "full_name": cv_data.name,
-        "email": cv_data.email,
-        "phone": cv_data.phone,
-        "location": cv_data.location,
-        "about_me": cv_data.summary,
-        "skills": cv_data.skills,
-        "experience": cv_data.experience,
-        "education": cv_data.education,
-        "projects": cv_data.projects,
-        "certifications": cv_data.certifications,
-        "achievements": cv_data.achievements,
-        "hobbies": cv_data.hobbies,
-        "interests": cv_data.interests,
-        "languages": cv_data.languages,
-        "volunteering": cv_data.volunteering,
-        "publications": cv_data.publications,
-        "awards": cv_data.awards,
-        "references": cv_data.references,
-        "resume_path": str(file_path)
+    # Queue the background parsing and update task
+    await queue_manager.add_task(
+        "profile_update",
+        process_profile_update,
+        file_path=file_path
+    )
+    
+    return {
+        "status": "queued", 
+        "message": "Resume upload successful. Background profile update started.",
+        "file_path": str(file_path)
     }
-    
-    # Auto-save to DB or return data to frontend to review?
-    # Let's auto-save but return data for frontend to display
-    
-    # Note: We are NOT calling db.create_or_update_profile here 
-    # because we want the user to review the parsed data in the form first.
-    # The frontend should pre-fill the form with this response.
-    
-    return profile_update

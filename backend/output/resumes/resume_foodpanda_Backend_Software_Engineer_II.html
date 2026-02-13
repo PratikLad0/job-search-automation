@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        /* Header */
+        .header {
+            text-align: left;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            font-size: 22pt;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        .header .title-line {
+            font-size: 12pt;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        .header .contact {
+            font-size: 9pt;
+            color: #666;
+        }
+        .header .contact a { color: #2980b9; text-decoration: none; }
+
+        /* Sections */
+        .section { margin-bottom: 14px; }
+        .section h2 {
+            font-size: 12pt;
+            color: #2c3e50;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 3px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Summary */
+        .summary p {
+            font-size: 10pt;
+            color: #444;
+            text-align: justify;
+        }
+
+        /* Skills */
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            list-style: none;
+        }
+        .skills-list li {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        /* Experience */
+        .experience-entry { margin-bottom: 12px; }
+        .experience-entry .exp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .experience-entry .exp-title {
+            font-weight: bold;
+            font-size: 11pt;
+            color: #2c3e50;
+        }
+        .experience-entry .exp-duration {
+            font-size: 9pt;
+            color: #777;
+        }
+        .experience-entry .exp-company {
+            font-size: 10pt;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .experience-entry ul {
+            margin-left: 18px;
+            font-size: 10pt;
+        }
+        .experience-entry li { margin-bottom: 2px; }
+
+        /* Education */
+        .education-entry {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .education-entry .edu-degree { font-weight: bold; }
+        .education-entry .edu-year { color: #777; font-size: 9pt; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Pratik Lad</h1>
+        <div class="title-line">Senior Backend Engineer | Cloud &amp; Microservices</div>
+        <div class="contact">
+            ladpratik00@gmail.com
+             | +91-7974758609
+             | Bengaluru, India
+        </div>
+    </div>
+
+    <div class="section summary">
+        <h2>Professional Summary</h2>
+        <p>Results-driven Senior Software Engineer with 4+ years of experience in designing and developing scalable backend systems using Node.js, Python, and microservices architecture. Skilled in REST APIs, WebSockets, and cloud deployments on AWS and DigitalOcean. Proven expertise in GenAI and event-driven systems.</p>
+    </div>
+
+    <div class="section">
+        <h2>Technical Skills</h2>
+        <ul class="skills-list">
+            
+            <li>C#</li>
+            
+            <li>Node.js</li>
+            
+            <li>Python</li>
+            
+            <li>REST APIs</li>
+            
+            <li>WebSockets</li>
+            
+            <li>microservices</li>
+            
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Experience</h2>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">Senior Software Engineer - Backend &amp; GenAl</span>
+                <span class="exp-duration">2023 – 2025</span>
+            </div>
+            <div class="exp-company">Techwarium India Pvt Ltd</div>
+            <ul>
+                
+                <li>Engineered REST APIs and WebSocket services using Node.js, improving data retrieval speed by 20%.</li>
+                
+                <li>Implemented secure authentication with JWT and OAuth2 for compliant access control in multi-tenant products.</li>
+                
+                <li>Deployed containerized backend on AWS and DigitalOcean using Docker, reducing deployment time by 30%.</li>
+                
+            </ul>
+        </div>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">Senior Unity &amp; Backend Developer</span>
+                <span class="exp-duration">2019 – 2023</span>
+            </div>
+            <div class="exp-company">Techwarium India Pvt Ltd</div>
+            <ul>
+                
+                <li>Converted VR/ AR experiences into full-stack platforms with REST APIs, databases, and backend-driven content management.</li>
+                
+                <li>Optimized runtime using lazy loading and efficient state sync, reducing lag in VR/ AR apps by 20-30%.</li>
+                
+            </ul>
+        </div>
+        
+    </div>
+
+    
+    <div class="section">
+        <h2>Key Projects</h2>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">Joytree VR Shopping App</span>
+            </div>
+            <div class="exp-company">
+                
+                <em>Stack: Node.js, Express.js</em>
+                
+            </div>
+            <p style="font-size: 10pt; margin-top: 4px;"></p>
+        </div>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">TracXpert Inventory Intelligence Platform</span>
+            </div>
+            <div class="exp-company">
+                
+                <em>Stack: Python</em>
+                
+            </div>
+            <p style="font-size: 10pt; margin-top: 4px;"></p>
+        </div>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">Lalaverse 3D Mall Platform</span>
+            </div>
+            <div class="exp-company">
+                
+                <em>Stack: Node.js, Express.js</em>
+                
+            </div>
+            <p style="font-size: 10pt; margin-top: 4px;"></p>
+        </div>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">Qupe 3D Dating App</span>
+            </div>
+            <div class="exp-company">
+                
+                <em>Stack: Python</em>
+                
+            </div>
+            <p style="font-size: 10pt; margin-top: 4px;"></p>
+        </div>
+        
+        <div class="experience-entry">
+            <div class="exp-header">
+                <span class="exp-title">Angelium VR Metaverse</span>
+            </div>
+            <div class="exp-company">
+                
+                <em>Stack: Node.js, Express.js</em>
+                
+            </div>
+            <p style="font-size: 10pt; margin-top: 4px;"></p>
+        </div>
+        
+    </div>
+    
+
+    <div class="section">
+        <h2>Education</h2>
+        
+        <div class="education-entry">
+            <span class="edu-degree">M.Tech-Data Science and Engineering — Birla Institute of Technology and Science (BITS), Pilani</span>
+            <span class="edu-year">2021 – 2023</span>
+        </div>
+        
+        <div class="education-entry">
+            <span class="edu-degree">B.E. - Information Technology — Lakshmi Narain College of Technology (LNCT)</span>
+            <span class="edu-year">2014 – 2018</span>
+        </div>
+        
+    </div>
+
+    
+
+    
+    <div class="section">
+        <h2>Achievements</h2>
+        <ul style="margin-left: 18px; font-size: 10pt;">
+            
+            <li>Improved data retrieval speed by 20%</li>
+            
+            <li>Runtime performance by up to 40% for VR/ AR and 3D applications</li>
+            
+        </ul>
+    </div>
+    
+
+    
+
+    
+</body>
+</html>

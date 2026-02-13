@@ -61,9 +61,13 @@ export function ResumeUpload({ onUploadSuccess }: ResumeUploadProps) {
             }
 
             const data = await response.json();
-            onUploadSuccess(data);
+            if (data.status === 'queued') {
+                onUploadSuccess({ status: 'queued' });
+            } else {
+                onUploadSuccess(data);
+            }
         } catch (err) {
-            setError('Failed to upload and parse resume. Please try again.');
+            setError('Failed to upload resume. Please try again.');
             console.error(err);
         } finally {
             setIsUploading(false);
@@ -85,6 +89,7 @@ export function ResumeUpload({ onUploadSuccess }: ResumeUploadProps) {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleChange}
                     accept=".pdf,.docx,.doc"
+                    disabled={isUploading}
                 />
 
                 <div className="flex flex-col items-center justify-center space-y-3">
@@ -96,7 +101,7 @@ export function ResumeUpload({ onUploadSuccess }: ResumeUploadProps) {
 
                     <div className="text-sm text-gray-600">
                         {isUploading ? (
-                            <span>Parsing resume... This uses AI and may take a moment.</span>
+                            <span>Uploading and queueing resume...</span>
                         ) : (
                             <>
                                 <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop

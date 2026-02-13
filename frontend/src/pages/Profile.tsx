@@ -3,6 +3,7 @@ import { User, Briefcase, GraduationCap, Code, FileText, Save, Plus, Trash2, Awa
 import { toast } from 'sonner';
 import { ResumeUpload } from '../components/profile/ResumeUpload';
 import type { UserProfile } from '../types';
+import { useWebSocket } from '../context/WebSocketProvider';
 
 const TABS = [
     { id: 'personal', label: 'Personal Info', icon: User },
@@ -14,6 +15,7 @@ const TABS = [
 ];
 
 export default function Profile() {
+    const { lastEvent } = useWebSocket();
     const [activeTab, setActiveTab] = useState('personal');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -47,6 +49,14 @@ export default function Profile() {
     useEffect(() => {
         fetchProfile();
     }, []);
+
+    // Listen for background profile updates from WebSocket
+    useEffect(() => {
+        if (lastEvent?.type === "task_finished" && lastEvent.data.task.type === "profile_update") {
+            toast.success("Profile automatically updated from resume!");
+            fetchProfile(); // Reload the data from DB
+        }
+    }, [lastEvent]);
 
     const fetchProfile = async () => {
         try {
@@ -87,9 +97,13 @@ export default function Profile() {
         }
     };
 
-    const handleResumeParsed = (data: Partial<UserProfile>) => {
-        setProfile(prev => ({ ...prev, ...data }));
-        toast.success('Resume parsed! Please review and save your profile.');
+    const handleResumeParsed = (data: any) => {
+        if (data.status === 'queued') {
+            toast.info('Resume queued for background parsing. Your profile will update automatically.');
+        } else {
+            setProfile(prev => ({ ...prev, ...data }));
+            toast.success('Resume parsed successfully!');
+        }
     };
 
     const updateField = (field: keyof UserProfile, value: any) => {
@@ -119,7 +133,10 @@ export default function Profile() {
     };
 
     if (loading) {
-        return <div className="p-8 text-center">Loading profile...</div>;
+        return <div className="p-8 text-center text-slate-500">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            Loading profile...
+        </div>;
     }
 
     return (
@@ -129,7 +146,7 @@ export default function Profile() {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 shadow-sm transition-all active:scale-95"
                 >
                     <Save className="h-4 w-4" />
                     <span>{saving ? 'Saving...' : 'Save Profile'}</span>
@@ -138,25 +155,26 @@ export default function Profile() {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-6 bg-gray-50 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold mb-4">Resume Upload</h2>
+                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-blue-500" />
+                        AI Resume Import
+                    </h2>
                     <ResumeUpload onUploadSuccess={handleResumeParsed} />
                 </div>
 
-                <div className="flex border-b border-gray-200" role="tablist" aria-label="Profile Sections">
+                <div className="flex border-b border-gray-200 overflow-x-auto no-scrollbar" role="tablist">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
                             role="tab"
                             aria-selected={activeTab === tab.id}
-                            aria-controls={`${tab.id}-panel`}
-                            id={`${tab.id}-tab`}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 py-4 px-6 text-sm font-medium flex items-center justify-center space-x-2 border-b-2 transition-colors ${activeTab === tab.id
+                            className={`flex-shrink-0 py-4 px-6 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${activeTab === tab.id
                                 ? 'border-blue-500 text-blue-600 bg-blue-50'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
-                            <tab.icon className="h-4 w-4" aria-hidden="true" />
+                            <tab.icon className="h-4 w-4" />
                             <span>{tab.label}</span>
                         </button>
                     ))}
@@ -165,7 +183,7 @@ export default function Profile() {
                 <div className="p-8">
                     {/* PERSONAL INFO TAB */}
                     {activeTab === 'personal' && (
-                        <div id="personal-panel" role="tabpanel" aria-labelledby="personal-tab" className="space-y-6">
+                        <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -245,7 +263,7 @@ export default function Profile() {
 
                     {/* SKILLS TAB */}
                     {activeTab === 'skills' && (
-                        <div id="skills-panel" role="tabpanel" aria-labelledby="skills-tab" className="space-y-6">
+                        <div className="space-y-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Technologes & Skills (Enter comma separated)</label>
                                 <textarea
@@ -278,10 +296,9 @@ export default function Profile() {
                             </button>
 
                             {profile.experience.map((exp, index) => (
-                                <div key={index} className="border p-4 rounded-lg bg-gray-50 relative group">
+                                <div key={index} className="border p-4 rounded-lg bg-gray-50 relative group mb-4">
                                     <button
                                         onClick={() => removeArrayItem('experience', index)}
-                                        aria-label={`Remove experience ${index + 1}`}
                                         className="absolute top-4 right-4 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -291,25 +308,25 @@ export default function Profile() {
                                             placeholder="Job Title"
                                             value={exp.title}
                                             onChange={e => updateArrayItem('experience', index, 'title', e.target.value)}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                         <input
                                             placeholder="Company"
                                             value={exp.company}
                                             onChange={e => updateArrayItem('experience', index, 'company', e.target.value)}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                         <input
                                             placeholder="Duration (e.g. 2020 - Present)"
                                             value={exp.duration}
                                             onChange={e => updateArrayItem('experience', index, 'duration', e.target.value)}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                         <textarea
                                             placeholder="Description"
                                             value={exp.description}
                                             onChange={e => updateArrayItem('experience', index, 'description', e.target.value)}
-                                            className="md:col-span-2 p-2 border rounded h-24"
+                                            className="md:col-span-2 p-2 border rounded h-24 w-full"
                                         />
                                     </div>
                                 </div>
@@ -329,10 +346,9 @@ export default function Profile() {
                             </button>
 
                             {profile.education.map((edu, index) => (
-                                <div key={index} className="border p-4 rounded-lg bg-gray-50 relative group">
+                                <div key={index} className="border p-4 rounded-lg bg-gray-50 relative group mb-4">
                                     <button
                                         onClick={() => removeArrayItem('education', index)}
-                                        aria-label={`Remove education ${index + 1}`}
                                         className="absolute top-4 right-4 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -342,19 +358,19 @@ export default function Profile() {
                                             placeholder="Degree"
                                             value={edu.degree}
                                             onChange={e => updateArrayItem('education', index, 'degree', e.target.value)}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                         <input
                                             placeholder="Institution"
                                             value={edu.institution}
                                             onChange={e => updateArrayItem('education', index, 'institution', e.target.value)}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                         <input
                                             placeholder="Year"
                                             value={edu.year}
                                             onChange={e => updateArrayItem('education', index, 'year', e.target.value)}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                     </div>
                                 </div>
@@ -374,10 +390,9 @@ export default function Profile() {
                             </button>
 
                             {profile.projects.map((proj, index) => (
-                                <div key={index} className="border p-4 rounded-lg bg-gray-50 relative group">
+                                <div key={index} className="border p-4 rounded-lg bg-gray-50 relative group mb-4">
                                     <button
                                         onClick={() => removeArrayItem('projects', index)}
-                                        aria-label={`Remove project ${index + 1}`}
                                         className="absolute top-4 right-4 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -388,26 +403,26 @@ export default function Profile() {
                                                 placeholder="Project Name"
                                                 value={proj.name}
                                                 onChange={e => updateArrayItem('projects', index, 'name', e.target.value)}
-                                                className="p-2 border rounded font-semibold"
+                                                className="p-2 border rounded font-semibold w-full"
                                             />
                                             <input
                                                 placeholder="Link URL"
                                                 value={proj.link}
                                                 onChange={e => updateArrayItem('projects', index, 'link', e.target.value)}
-                                                className="p-2 border rounded"
+                                                className="p-2 border rounded w-full"
                                             />
                                         </div>
                                         <textarea
                                             placeholder="Description"
                                             value={proj.description}
                                             onChange={e => updateArrayItem('projects', index, 'description', e.target.value)}
-                                            className="p-2 border rounded h-20"
+                                            className="p-2 border rounded h-20 w-full"
                                         />
                                         <input
                                             placeholder="Tech Stack (comma separated)"
                                             value={proj.tech_stack.join(', ')}
                                             onChange={e => updateArrayItem('projects', index, 'tech_stack', e.target.value.split(',').map((s: string) => s.trim()))}
-                                            className="p-2 border rounded"
+                                            className="p-2 border rounded w-full"
                                         />
                                     </div>
                                 </div>
@@ -415,10 +430,9 @@ export default function Profile() {
                         </div>
                     )}
 
-                    {/* OTHER TAB (Hobbies, Languages, etc) */}
+                    {/* OTHER TAB */}
                     {activeTab === 'other' && (
                         <div className="space-y-8">
-                            {/* Hobbies */}
                             <div className="space-y-2">
                                 <h3 className="text-md font-semibold flex items-center"><Heart className="h-4 w-4 mr-2" /> Hobbies</h3>
                                 <textarea
@@ -430,7 +444,6 @@ export default function Profile() {
                                 />
                             </div>
 
-                            {/* Interests */}
                             <div className="space-y-2">
                                 <h3 className="text-md font-semibold flex items-center"><BookOpen className="h-4 w-4 mr-2" /> Interests</h3>
                                 <textarea
@@ -442,7 +455,6 @@ export default function Profile() {
                                 />
                             </div>
 
-                            {/* Languages */}
                             <div className="space-y-2">
                                 <h3 className="text-md font-semibold flex items-center"><Globe className="h-4 w-4 mr-2" /> Languages</h3>
                                 <textarea
@@ -454,7 +466,6 @@ export default function Profile() {
                                 />
                             </div>
 
-                            {/* Achievements */}
                             <div className="space-y-2">
                                 <h3 className="text-md font-semibold flex items-center"><Award className="h-4 w-4 mr-2" /> Achievements</h3>
                                 <button
@@ -464,7 +475,7 @@ export default function Profile() {
                                     + Add Achievement
                                 </button>
                                 {profile.achievements.map((ach, i) => (
-                                    <div key={i} className="flex gap-2">
+                                    <div key={i} className="flex gap-2 mb-2">
                                         <input
                                             value={ach}
                                             onChange={e => {
@@ -478,10 +489,8 @@ export default function Profile() {
                                     </div>
                                 ))}
                             </div>
-
                         </div>
                     )}
-
                 </div>
             </div>
         </div>

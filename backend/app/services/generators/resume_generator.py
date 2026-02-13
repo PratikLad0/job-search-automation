@@ -72,11 +72,11 @@ def generate_resume_pdf(job: Job, cv_data: Optional[CVData] = None) -> Optional[
             from weasyprint import HTML
             HTML(string=html_content).write_pdf(str(output_path))
             logger.info(f"Resume PDF generated: {output_path}")
-        except ImportError:
-            # Fallback: save as HTML if WeasyPrint not available
+        except Exception as e:
+            # Fallback: save as HTML if WeasyPrint fails (e.g. missing dependencies or GObject error)
             html_path = output_path.with_suffix(".html")
             html_path.write_text(html_content, encoding="utf-8")
-            logger.warning(f"WeasyPrint not available. Saved HTML: {html_path}")
+            logger.warning(f"WeasyPrint failed ({e}). Saved HTML: {html_path}")
             return html_path
 
         return output_path
@@ -129,10 +129,11 @@ def generate_cover_letter_pdf(
             from weasyprint import HTML
             HTML(string=html_content).write_pdf(str(output_path))
             logger.info(f"Cover letter PDF generated: {output_path}")
-        except ImportError:
+        except Exception as e:
+            # Fallback to HTML
             html_path = output_path.with_suffix(".html")
             html_path.write_text(html_content, encoding="utf-8")
-            logger.warning(f"WeasyPrint not available. Saved HTML: {html_path}")
+            logger.warning(f"WeasyPrint failed ({e}). Saved HTML: {html_path}")
             return html_path
 
         return output_path

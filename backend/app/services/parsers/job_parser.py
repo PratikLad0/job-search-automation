@@ -8,8 +8,8 @@ import random
 
 from bs4 import BeautifulSoup
 
-from tracker.models import Job
-import config
+from backend.app.db.models import Job
+from backend.app.core import config
 
 logger = logging.getLogger(__name__)
 

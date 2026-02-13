@@ -1,17 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, List
-import sys
-import os
+from typing import Optional
 
-
-
-try:
-    from backend.app.services.ai.provider import get_ai
-    from backend.app.db.database import JobDatabase
-    from backend.app.api.dependencies import get_db
-except ImportError:
-    pass
+from backend.app.core.queue_manager import queue_manager
+from backend.app.services.ai.tasks import process_chat_message
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -23,30 +15,18 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
-@router.post("/", response_model=ChatResponse)
-async def chat(request: ChatRequest, db: JobDatabase = Depends(get_db)):
-    ai = get_ai()
-    
-    system_prompt = (
-        "You are a helpful career assistant. You help the user with their job search, "
-        "analyzing job descriptions, and providing advice on applications."
+@router.post("/", response_model=dict)
+async def chat(request: ChatRequest):
+    """Queue chat message for background processing."""
+    await queue_manager.add_task(
+        "chat",
+        process_chat_message,
+        message=request.message,
+        job_id=request.job_id,
+        context=request.context
     )
     
-    context_data = ""
-    
-    if request.job_id:
-        job = db.get_job(request.job_id)
-        if job:
-            context_data += f"\n\nActive Job Context:\nTitle: {job.title}\nCompany: {job.company}\nDescription: {job.description}\n"
-    
-    if request.context:
-        context_data += f"\n\nAdditional Context: {request.context}"
-        
-    if context_data:
-        system_prompt += context_data
-        
-    try:
-        response_text = ai.generate(request.message, system_prompt=system_prompt)
-        return ChatResponse(response=response_text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "status": "queued",
+        "message": "Chat request sent to AI for processing. You will see the response in the chat soon."
+    }

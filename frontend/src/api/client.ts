@@ -23,7 +23,7 @@ export const jobsApi = {
         return response.data;
     },
     generateDocs: async (id: number) => {
-        const response = await api.post(`/generate/${id}`);
+        const response = await api.post(`/generators/${id}`);
         return response.data;
     },
 };

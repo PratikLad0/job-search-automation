@@ -6,9 +6,9 @@ Dynamically adjusts resume emphasis based on specific job requirements.
 import logging
 from typing import Optional
 
-from ai.provider import get_ai
-from tracker.models import Job, CVData
-from parsers.cv_parser import parse_cv
+from backend.app.services.ai.provider import get_ai
+from backend.app.db.models import Job, CVData
+from backend.app.services.parsers.cv_parser import parse_cv
 
 logger = logging.getLogger(__name__)
 
