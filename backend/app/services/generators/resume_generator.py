@@ -69,14 +69,19 @@ def generate_resume_pdf(job: Job, cv_data: Optional[CVData] = None) -> Optional[
 
         # Convert HTML to PDF
         try:
-            from weasyprint import HTML
-            HTML(string=html_content).write_pdf(str(output_path))
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(html_content)
+                page.pdf(path=str(output_path), format="A4", margin={"top": "1cm", "bottom": "1cm", "left": "1cm", "right": "1cm"})
+                browser.close()
             logger.info(f"Resume PDF generated: {output_path}")
         except Exception as e:
-            # Fallback: save as HTML if WeasyPrint fails (e.g. missing dependencies or GObject error)
+            # Fallback: save as HTML if Playwright fails
             html_path = output_path.with_suffix(".html")
             html_path.write_text(html_content, encoding="utf-8")
-            logger.warning(f"WeasyPrint failed ({e}). Saved HTML: {html_path}")
+            logger.warning(f"Playwright failed ({e}). Saved HTML: {html_path}")
             return html_path
 
         return output_path
@@ -126,14 +131,19 @@ def generate_cover_letter_pdf(
         output_path = config.COVER_LETTERS_DIR / filename
 
         try:
-            from weasyprint import HTML
-            HTML(string=html_content).write_pdf(str(output_path))
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(html_content)
+                page.pdf(path=str(output_path), format="A4")
+                browser.close()
             logger.info(f"Cover letter PDF generated: {output_path}")
         except Exception as e:
             # Fallback to HTML
             html_path = output_path.with_suffix(".html")
             html_path.write_text(html_content, encoding="utf-8")
-            logger.warning(f"WeasyPrint failed ({e}). Saved HTML: {html_path}")
+            logger.warning(f"Playwright failed ({e}). Saved HTML: {html_path}")
             return html_path
 
         return output_path
