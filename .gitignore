@@ -1,0 +1,68 @@
+# --- Dependencies & Build ---
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+dist-ssr/
+build/
+*.egg-info/
+.installed.cfg
+.eggs/
+
+# --- Environment & Secrets ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+.secret
+
+# --- Project Specific Data ---
+# Databases
+*.db
+*.sqlite
+data/*.db
+data/*.sqlite
+backend/data/jobs.db
+
+# User Data & Uploads
+# We ignore contents but keep the directories if they contain .gitkeep
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+output/resumes/*
+!output/resumes/.gitkeep
+output/cover_letters/*
+!output/cover_letters/.gitkeep
+output/reports/*
+!output/reports/.gitkeep
+
+# Root level specific files
+context.txt
+dashboard.txt
+*.pdf
+*.docx
+!template.docx
+
+# --- Logs ---
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- IDEs & OS ---
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

@@ -1,0 +1,95 @@
+{
+  "name": "Pratik Lad",
+  "email": "ladpratik00@gmail.com",
+  "phone": "+91-7974758609",
+  "location": "Bengaluru",
+  "summary": "Senior Software Engineer with extensive experience in backend development and GenAI, specialising in designing and deploying REST APIs and WebSocket services using Node.js, Express.js, and Python.",
+  "skills": [
+    "C#",
+    "Node.js (JavaScript/TypeScript)",
+    "Python",
+    "PHP",
+    "Ruby",
+    "Express.js",
+    "FastAPI",
+    "REST APIs",
+    "WebSockets",
+    "microservices",
+    "event-driven systems",
+    "ReactJS (dashboards, admin panels, internal tools)",
+    "GenAl & Al Agents",
+    "LLM integration (Azure GPT/OpenAI)",
+    "RAG",
+    "Al agents",
+    "prompt",
+    "Databases orchestration, workflow automation, conversational backends.",
+    "MySQL",
+    "PostgreSQL",
+    "MongoDB",
+    "Cloud & DevOps",
+    "Security",
+    "AWS",
+    "DigitalOcean",
+    "Docker",
+    "Linux",
+    "CI/CD",
+    "monitoring",
+    "JWT",
+    "OAuth2",
+    "role-based access control",
+    "secure payments logging"
+  ],
+  "experience": [
+    {
+      "title": "Senior Software Engineer - Backend & GenAl, Techwarium India Pvt Ltd",
+      "company": "Techwarium India Pvt Ltd",
+      "duration": "2023 – 2025",
+      "description": "Engineered REST APIs and WebSocket services using Node.js and Python, boosting data retrieval speed by 20%. Implemented secure authentication with JWT and OAuth2 for compliant access control in multi-tenant products. Deployed containerized backend on AWS and DigitalOcean using Docker, reducing deployment time by 30%."
+    },
+    {
+      "title": "Senior Unity & Backend Developer, Techwarium India Pvt Ltd",
+      "company": "Techwarium India Pvt Ltd",
+      "duration": "2019 – 2023",
+      "description": "Converted VR/AR experiences into full-stack platforms with REST APIs, databases, and backend-driven content management. Optimized runtime using lazy loading and efficient state sync, reducing lag in VR/AR apps by 20-30%."
+    },
+    {
+      "title": "Contract Backend Engineer - Al & GenAl",
+      "company": "Al Receptionist (GenAI + 3D Hologram)",
+      "duration": "",
+      "description": "Designed backend services for AI receptionist featuring 3D hologram UI with integrated camera tracking and sensor data. Developed RAG-based pipelines utilizing Azure GPT for canteen menus, meeting schedules, and employee data."
+    },
+    {
+      "title": "Contract Backend Engineer - Al-Driven AR Education Platform",
+      "company": "",
+      "duration": "",
+      "description": "Developed backend services using Node.js and Python to manage object tracking events from AR clients. Integrated computer vision outputs with LLMs, enabling students to inquire about tracked objects and receive contextual responses."
+    },
+    {
+      "title": "Contract Backend Engineer - GenAl Marketing Assistant (AR Product Promoter)",
+      "company": "",
+      "duration": "",
+      "description": "Developed backend for AR-based GenAI marketing application using 3D models and conversational AI. Created APIs for product catalogues, personalization, and real-time conversation context management."
+    },
+    {
+      "title": "Contract Backend Engineer - Multiplayer Game Backend (Ludosquare)",
+      "company": "",
+      "duration": "",
+      "description": "Engineered wallet-enabled multiplayer backend utilizing WebSockets, accommodating over 4,000 concurrent players. Implemented anti-cheat systems and transaction handling to enhance security and reliability."
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.Tech-Data Science and Engineering",
+      "institution": "Birla Institute of Technology and Science (BITS), Pilani",
+      "year": "2021 – 2023"
+    },
+    {
+      "degree": "B.E. - Information Technology",
+      "institution": "Lakshmi Narain College of Technology (LNCT)",
+      "year": "2014 – 2018"
+    }
+  ],
+  "certifications": [],
+  "total_years": "5",
+  "raw_text": "PRATIK LAD\nSenior Backend Engineer - Al Agents & GenAl Applications\nladpratik00@gmail.com +91-7974758609 Bengaluru linkedin.com/in/pratik-lad-04b846b5\nSummary\nSenior Software Engineer with extensive experience in backend development and GenAI, specialising in designing and deploying\nREST APIs and WebSocket services using Node.js, Express.js, and Python. Proven track record of improving data retrieval speed by\n20% and runtime by up to 40% for VR/ AR and 3D applications. Expertise in secure authentication with JWT and OAuth2,\ncontainerised backend deployment on AWS and DigitalOcean, and optimising runtime performance through query optimisation and\ncaching. Notable projects include Joytree VR Shopping App, TracXpert Inventory Intelligence Platform, Lalaverse 3D Mall Platform,\nQupe 3D Dating App, and Angelium VR Metaverse. Skilled in C#, JavaScript, TypeScript, FastAPI, microservices architecture, real-\ntime systems development with WebSockets, MySQL schema design, cloud deployment strategies on AWS and DigitalOcean using\nDocker. Career goal: to leverage expertise in API development and AI integration to drive innovation in SaaS solutions across\ndiverse industries.\nCore Skills\nLanguages Backend\nC#, Node.js (JavaScript/ TypeScript), Python, PHP, Ruby Express.js, FastAPI, REST APIs, WebSockets, microservices,\nevent-driven systems\nFrontend\nReactJS (dashboards, admin panels, internal tools) GenAl & Al Agents\nLLM integration (Azure GPT/ OpenAI), RAG, Al agents, prompt\nDatabases orchestration, workflow automation, conversational backends.\nMySQL, PostgreSQL, MongoDB\nCloud & DevOps\nSecurity AWS, DigitalOcean, Docker, Linux, CI/ CD, monitoring &\nJWT, OAuth2, role-based access control, secure payments logging\nDomains\nVR/ AR platforms, 3D apps, gaming, e-commerce, SaaS, edtech,\nmartech\nProfessional Experience\nSenior Software Engineer - Backend & GenAl, Techwarium India Pvt Ltd 2023 – 2025\nEngineered REST APIs and WebSocket services using Node.js and Python, boosting data retrieval Indore, India\n•\nspeed by 20%.\nImplemented secure authentication with JWT and OAuth2 for compliant access control in multi-\n•\ntenant products.\nDeployed containerized backend on AWS and DigitalOcean using Docker, reducing deployment time\n•\nby 30%.\nDeveloped Express.js APIs for Joytree, optimizing product browsing and checkout, cutting load time\n•\nby 35%.\nCreated AI-driven recommendation engine for TracXpert, increasing inventory efficiency by 25%\n•\nacross 10 MSMEs.\nEngineered robust backend for Lalaverse, enhancing runtime performance by 40% through caching\n•\nstrategies.\nBuilt real-time engagement features for Qupe using WebSockets, raising user interaction by 40% via\n•\nchat.\nImplemented scalable multiplayer backend services for Angelium, managing crypto payments for\n•\nthousands of users.\nSenior Unity & Backend Developer, Techwarium India Pvt Ltd 2019 – 2023\nConverted VR/ AR experiences into full-stack platforms with REST APIs, databases, and backend- Indore, India\n•\ndriven content management.\nOptimized runtime using lazy loading and efficient state sync, reducing lag in VR/ AR apps by 20-\n•\n30%.\nDelivered Metaverse, training, shopping, and multiplayer projects with integrated payments and\n•\nanalytics.\nBuilt SDKs for dynamic paywalls and carrier billing, enabling new monetization models for multiple\n•\nproducts.\nContract-Based Experience - Al & GenAl,\nContract Backend Engineer - Al Receptionist (GenAI + 3D Hologram)\nDesigned backend services for AI receptionist featuring 3D hologram UI with integrated camera\n•\ntracking and sensor data.\nDeveloped RAG-based pipelines utilizing Azure GPT for canteen menus, meeting schedules, and\n•\nemployee data.\nCreated APIs for Unity/ 3D frontend and voice interaction, automating meeting bookings and\n•\nenhancing receptionist efficiency.\nContract Backend Engineer - Al-Driven AR Education Platform\nDeveloped backend services using Node.js and Python to manage object tracking events from AR\n•\nclients.\nIntegrated computer vision outputs with LLMs, enabling students to inquire about tracked objects\n•\nand receive contextual responses.\nDelivered scalable APIs for real-time 3D content and adaptive learning modules with progress\n•\ntracking.\nContract Backend Engineer - GenAl Marketing Assistant (AR Product Promoter)\nDeveloped backend for AR-based GenAI marketing application using 3D models and conversational\n•\nAI.\nCreated APIs for product catalogues, personalization, and real-time conversation context\n•\nmanagement.\nIntegrated analytics events to measure campaign performance, including views, dwell time, and CTA\n•\nclicks.\nContract Backend Engineer - Multiplayer Game Backend (Ludosquare)\nEngineered wallet-enabled multiplayer backend utilizing WebSockets, accommodating over 4,000\n•\nconcurrent players.\nImplemented anti-cheat systems and transaction handling to enhance security and reliability.\n•\nDesigned real-time matchmaking algorithms to ensure a seamless gaming experience.\n•\nEducation\nM.Tech-Data Science and Engineering, Birla Institute of Technology and Science (BITS), Pilani 2021 – 2023\nGPA: CGPA 7.46/ 10\nB.E. - Information Technology, Lakshmi Narain College of Technology (LNCT), Bhopal 2014 – 2018\nGPA: CGPA: 6.24 out of 10"
+}
