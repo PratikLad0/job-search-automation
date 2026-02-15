@@ -30,15 +30,9 @@ playwright install chromium
 
 Once you have a job in your dashboard and have generated a resume/cover letter:
 
-1.  **Identify the Job ID**: Find the ID of the job you want to apply for in the dashboard.
-2.  **Trigger Automation**:
-    The system provides a new automation service that can be triggered via the API or a future "Apply Now" button in the UI.
-
-### Manual Trigger (API)
-You can trigger the application for a specific job using a simple POST request:
-```bash
-curl -X POST http://localhost:8000/generators/{JOB_ID}/apply
-```
+1.  **Generate Documents**: Ensure you have generated a resume for the job.
+2.  **Trigger Automation**: Click the **"Auto Apply"** button on the job card in the Job Board.
+    *   *Note: This button only appears if you have already generated a resume for that job.*
 
 ### Automation Flow
 1.  **URL Navigation**: Playwright opens the job URL.
@@ -55,8 +49,13 @@ You can configure the browser profile path in your `.env` file to ensure the aut
 
 ```env
 # Path to your Chrome User Data (example)
-CHROME_USER_DATA="C:\Users\YourUser\AppData\Local\Google\Chrome\User Data"
+BROWSER_PROFILE_PATH="C:\Users\YourUser\AppData\Local\Google\Chrome\User Data"
 ```
+
+### Troubleshooting: "Profile in Use"
+If you get an error saying your browser profile is in use:
+1.  **Close Chrome**: Close all open Chrome windows and try again.
+2.  **Separate Profile**: Create a dedicated Chrome profile for automation and use its path in your `.env` file instead.
 
 > [!WARNING]
 > While automation is running, do not close the browser window that Playwright opens (if running in non-headless mode). Let it finish the steps and close automatically.

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileText, Mail, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '../../config';
 
 interface GenerateButtonProps {
     jobId: number;
@@ -28,7 +29,7 @@ export function GenerateButton({ jobId, resumePath, coverLetterPath }: GenerateB
         setShowFormatMenu(null);
 
         try {
-            const response = await fetch(`http://localhost:8000/generators/${jobId}/${docType}?format=${format}`, {
+            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/${docType}?format=${format}`, {
                 method: 'POST',
             });
 
@@ -53,7 +54,7 @@ export function GenerateButton({ jobId, resumePath, coverLetterPath }: GenerateB
 
     const downloadFile = (path: string) => {
         if (!path) return;
-        window.open(`http://localhost:8000/generators/download?path=${encodeURIComponent(path)}`, '_blank');
+        window.open(`${API_BASE_URL}/generators/download?path=${encodeURIComponent(path)}`, '_blank');
     };
 
     const isGenerating = generating.resume || generating.cover_letter;

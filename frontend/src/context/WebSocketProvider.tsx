@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { WS_BASE_URL } from '../config';
 
 interface WebSocketContextType {
     connected: boolean;
@@ -26,7 +27,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
         console.log("🔌 Connecting to WebSocket...");
-        const ws = new WebSocket("ws://127.0.0.1:8000/assistant/ws");
+        const ws = new WebSocket(`${WS_BASE_URL}/assistant/ws`);
 
         ws.onopen = () => {
             console.log("✅ WebSocket Connected");

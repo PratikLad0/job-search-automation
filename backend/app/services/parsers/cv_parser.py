@@ -78,6 +78,9 @@ Return a valid JSON object with these exact fields:
     "phone": "phone number",
     "location": "City, Country",
     "summary": "Professional summary",
+    "linkedin_url": "URL",
+    "github_url": "URL",
+    "portfolio_url": "URL",
     "skills": ["skill1", "skill2"],
     "experience": [
         {{
@@ -151,6 +154,9 @@ Return a valid JSON object with these exact fields:
             phone=result.get("phone", ""),
             location=result.get("location", ""),
             summary=result.get("summary", ""),
+            linkedin_url=result.get("linkedin_url", ""),
+            github_url=result.get("github_url", ""),
+            portfolio_url=result.get("portfolio_url", ""),
             skills=result.get("skills", []),
             experience=result.get("experience", []),
             education=result.get("education", []),
@@ -179,5 +185,8 @@ Return a valid JSON object with these exact fields:
 
     except Exception as e:
         logger.error(f"AI CV parsing failed: {e}")
-        # Return basic version with just raw text
-        return CVData(raw_text=raw_text)
+        # Try a more basic extraction if JSON fails, or just return raw text
+        return CVData(
+            name=f"Parsed Result (Error: {str(e)[:50]})",
+            raw_text=raw_text
+        )

@@ -97,6 +97,11 @@ USER_AGENTS = [
 
 
 
+# ─── Automation Settings ──────────────────────────────────────
+BROWSER_PROFILE_PATH = os.getenv("BROWSER_PROFILE_PATH", "")
+HEADLESS_AUTOMATION = os.getenv("HEADLESS_AUTOMATION", "false").lower() == "true"
+
+
 # ─── Email Settings ───────────────────────────────────────────
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -110,7 +115,12 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 
 # ─── Paths ─────────────────────────────────────────────────────
-OUTPUT_DIR = BASE_DIR / os.getenv("OUTPUT_DIR", "output")
+_output_env = os.getenv("OUTPUT_DIR", "output")
+if os.path.isabs(_output_env):
+    OUTPUT_DIR = Path(_output_env)
+else:
+    OUTPUT_DIR = BASE_DIR / _output_env
+
 DATA_DIR = BASE_DIR / os.getenv("DATA_DIR", "data")
 RESUMES_DIR = OUTPUT_DIR / "resumes"
 COVER_LETTERS_DIR = OUTPUT_DIR / "cover_letters"
@@ -118,6 +128,15 @@ REPORTS_DIR = OUTPUT_DIR / "reports"
 TEMPLATES_DIR = BASE_DIR / "app" / "services" / "generators" / "templates"
 DB_PATH = DATA_DIR / "jobs.db"
 CV_CACHE_PATH = DATA_DIR / "cv_data.json"
+
+
+# ─── Google API & OAuth2 ─────────────────────────────────────
+GOOGLE_CLIENT_SECRETS_FILE = BASE_DIR / "credentials.json"
+GOOGLE_TOKEN_FILE = DATA_DIR / "token.json"
+GOOGLE_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+# Add your local redirect URI (matching what's in Google Console)
+GOOGLE_REDIRECT_URI = "http://localhost:8000/auth/callback"
+GMAIL_CHECK_INTERVAL = int(os.getenv("GMAIL_CHECK_INTERVAL", "1800")) # 30 minutes
 
 # Ensure directories exist
 for _dir in [OUTPUT_DIR, DATA_DIR, RESUMES_DIR, COVER_LETTERS_DIR, REPORTS_DIR]:

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Save } from 'lucide-react';
+import GoogleSignIn from '../components/auth/GoogleSignIn';
 
 export default function SettingsPage() {
     return (
@@ -11,12 +11,14 @@ export default function SettingsPage() {
 
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
                 <div className="border-b border-slate-100 pb-4">
-                    <h3 className="tex-lg font-bold text-slate-800 mb-2">Notifications</h3>
+                    <h3 className="tex-lg font-bold text-slate-800 mb-2">Notifications & Integration</h3>
                     <p className="text-sm text-slate-500 mb-4">
-                        Setup your notification channels. Note: These require editing the <code>.env</code> file in the project root.
+                        Setup your notification channels and external integrations.
                     </p>
 
                     <div className="space-y-4">
+                        <GoogleSignIn />
+
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                             <h4 className="font-semibold text-blue-900 text-sm mb-2">Telegram Setup</h4>
                             <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">

@@ -46,3 +46,26 @@ async def mark_applied(job_id: int, db: JobDatabase = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to update status")
     
     return {"status": "success", "message": f"Job {job_id} marked as applied"}
+
+@router.put("/{job_id}/status")
+async def update_job_status(
+    job_id: int, 
+    status: str, 
+    db: JobDatabase = Depends(get_db)
+):
+    """Manually update the status of a job."""
+    job = db.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    valid_statuses = ["scraped", "scored", "resume_generated", "applied", "interview", "offer", "rejected", "cancelled"]
+    if status not in valid_statuses:
+        # We can be lenient or strict. Let's be lenient but log a warning if needed.
+        # For now, just proceed, maybe the user has custom statuses.
+        pass
+
+    success = db.update_status(job_id, status)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update status")
+    
+    return {"status": "success", "message": f"Job {job_id} status updated to {status}"}

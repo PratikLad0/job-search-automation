@@ -53,6 +53,9 @@ class CVData:
     phone: str = ""
     location: str = ""
     summary: str = ""
+    linkedin_url: str = ""
+    github_url: str = ""
+    portfolio_url: str = ""
     skills: list[str] = field(default_factory=list)
     experience: list[dict] = field(default_factory=list)
     education: list[dict] = field(default_factory=list)
@@ -137,6 +140,9 @@ class UserProfile:
             phone=self.phone,
             location=self.location,
             summary=self.about_me,
+            linkedin_url=self.linkedin_url,
+            github_url=self.github_url,
+            portfolio_url=self.portfolio_url,
             skills=safe_load(self.skills),
             experience=safe_load(self.experience),
             education=safe_load(self.education),

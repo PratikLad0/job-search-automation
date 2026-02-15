@@ -4,6 +4,7 @@ Sends daily digests of high-scoring jobs with apply links.
 """
 
 import logging
+import html
 from typing import Optional
 
 from backend.app.core import config
@@ -55,16 +56,20 @@ class TelegramNotifier:
 
     async def send_job_alert(self, job: Job) -> bool:
         """Send a single job alert."""
+        safe_title = html.escape(job.title)
+        safe_company = html.escape(job.company)
+        safe_location = html.escape(job.location)
+        
         message = (
-            f"🎯 <b>New Match: {job.title}</b>\n"
-            f"🏢 {job.company}\n"
-            f"📍 {job.location}\n"
+            f"🎯 <b>New Match: {safe_title}</b>\n"
+            f"🏢 {safe_company}\n"
+            f"📍 {safe_location}\n"
             f"⭐ Score: {job.match_score}/10\n"
         )
         if job.salary_text:
-            message += f"💰 {job.salary_text}\n"
+            message += f"💰 {html.escape(job.salary_text)}\n"
         if job.matched_skills:
-            message += f"🔧 {job.matched_skills}\n"
+            message += f"🔧 {html.escape(job.matched_skills)}\n"
         message += f"\n🔗 <a href='{job.url}'>Apply Here</a>"
 
         return await self.send_message(message)
@@ -78,13 +83,17 @@ class TelegramNotifier:
         entries = []
 
         for i, job in enumerate(jobs[:10], 1):  # Max 10 per digest
+            safe_title = html.escape(job.title)
+            safe_company = html.escape(job.company)
+            safe_location = html.escape(job.location)
+            
             entry = (
-                f"{i}. <b>{job.title}</b>\n"
-                f"   🏢 {job.company} | 📍 {job.location}\n"
+                f"{i}. <b>{safe_title}</b>\n"
+                f"   🏢 {safe_company} | 📍 {safe_location}\n"
                 f"   ⭐ {job.match_score}/10"
             )
             if job.salary_text:
-                entry += f" | 💰 {job.salary_text}"
+                entry += f" | 💰 {html.escape(job.salary_text)}"
             entry += f"\n   🔗 <a href='{job.url}'>Apply</a>\n"
             entries.append(entry)
 

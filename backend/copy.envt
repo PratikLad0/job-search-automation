@@ -1,0 +1,79 @@
+# ============================================================
+# Job Search Automation - Configuration
+# Copy this file to .env and fill in your values
+# ============================================================
+
+# AI Provider Settings
+# Primary: ollama | Backup: gemini | Optional: openai
+AI_PRIMARY_PROVIDER=ollama
+AI_BACKUP_PROVIDER=gemini
+
+# Ollama (local) - already installed models: llama3.1, llava, phi3
+OLLAMA_MODEL=llama3.1
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Gemini (backup) - your Pro account
+GEMINI_API_KEY=AIzaSyA6_BqqescKmKPKQbl2M_h9PLwCLO50ksk
+GEMINI_MODEL=gemini-2.0-flash
+
+# OpenAI (optional)
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+
+# --- Job Search Preferences ---
+# Comma-separated target role keywords
+TARGET_ROLES=Backend Engineer,Software Development Engineer,SDE-2,Full Stack Developer,Software Engineer,Platform Engineer,AI Engineer,Python Developer,Node.js Developer
+
+# Comma-separated target locations
+TARGET_LOCATIONS=India,Germany,Netherlands,UK,Singapore,UAE,Remote
+
+# Minimum match score (1-10) to keep a job
+MIN_MATCH_SCORE=7
+
+# Experience level
+EXPERIENCE_YEARS=5
+
+# --- Salary Filters (in local currency) ---
+SALARY_MIN_INR=2000000
+SALARY_MIN_EUR=40000
+SALARY_MIN_GBP=60000
+SALARY_MIN_SGD=100000
+SALARY_MIN_AED_MONTHLY=25000
+SALARY_MIN_USD=60000
+SALARY_MIN_SEK=600000
+
+# --- Scraping Safety Settings ---
+# Delay between page loads (seconds) - randomized within range
+SCRAPE_DELAY_MIN=3
+SCRAPE_DELAY_MAX=8
+# Maximum pages to scrape per source per run
+SCRAPE_MAX_PAGES=5
+# Maximum runs per day
+SCRAPE_MAX_DAILY_RUNS=3
+
+# --- Telegram Notifications ---
+TELEGRAM_BOT_TOKEN=8207994578:AAGu3EF7nVZh9Lg8-AaKoIlBs3VKFflYqn8
+TELEGRAM_CHAT_ID=6688476495
+
+# --- Output Settings ---
+OUTPUT_DIR=C:\Users\HP\Downloads\Job Automation output
+DATA_DIR=data
+
+# --- Optional API Keys for Extra Sources ---
+# Findwork.dev (free) - get key at https://findwork.dev
+FINDWORK_API_KEY=dc2e16a9401db4ccddfeb77c249fb08cb9b4a416
+
+# Adzuna (free tier) - register at https://developer.adzuna.com
+ADZUNA_APP_ID=1858bc9d
+ADZUNA_APP_KEY=0ec71cc2f1fe7e66e8b099129900f3a7
+CV_REF_PATH=C:\genai\JobSearchAutomation\backend\PRATIK-LAD-CV.pdf
+
+# ─── Automation Settings ──────────────────────────────────────
+# Path to your browser's User Data directory (to keep login sessions)
+# Windows Example: "C:\Users\YourName\AppData\Local\Google\Chrome\User Data"
+BROWSER_PROFILE_PATH=C:\Users\HP\AppData\Local\Google\Chrome\User Data
+HEADLESS_AUTOMATION=false
+
+# ─── Background Tasks ─────────────────────────────────────────
+# Interval in seconds to check Gmail for job alerts
+GMAIL_CHECK_INTERVAL=1800

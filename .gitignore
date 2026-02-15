@@ -15,11 +15,17 @@ build/
 
 # --- Environment & Secrets ---
 .env
+.envt
 .env.local
 .env.*.local
 *.pem
 *.key
 .secret
+credentials.json
+token.json
+token.pickle
+client_secret*.json
+client_secrets.json
 
 # --- Project Specific Data ---
 # Databases

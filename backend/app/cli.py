@@ -268,18 +268,112 @@ def list_jobs(
     _show_jobs_table(jobs)
 
 
-@app.command("mark-applied")
-def mark_applied(
-    job_id: int = typer.Argument(..., help="Job ID to mark as applied"),
+@app.command("apply")
+def apply_job(
+    job_id: int = typer.Argument(..., help="Job ID to apply for"),
 ):
-    """✅ Mark a job as applied."""
+    """🤖 Try to automatically apply for a job."""
+    console.print(Panel("🤖 [bold blue]Auto-Applier[/bold blue]", expand=False))
+    
     job = db.get_job(job_id)
     if not job:
         console.print(f"❌ Job ID {job_id} not found", style="red")
         raise typer.Exit(1)
 
-    db.update_status(job_id, "applied")
-    console.print(f"✅ Marked as applied: [cyan]{job.title}[/cyan] at [green]{job.company}[/green]")
+    console.print(f"🎯 Attempting to apply for: [cyan]{job.title}[/cyan] at [green]{job.company}[/green]")
+    console.print(f"🔗 URL: {job.url}")
+
+    # Import locally to avoid early async loop issues
+    import asyncio
+    from backend.app.services.automation.application_automator import AutomationManager
+
+    async def _run():
+        manager = AutomationManager()
+        return await manager.run_application(job_id)
+
+    try:
+        # Run the async automation
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            
+        result = asyncio.run(_run())
+        
+        if result.get("status") == "success":
+             console.print(f"\n✅ [bold green]{result['message']}[/bold green]")
+        else:
+             console.print(f"\n❌ [bold red]{result['message']}[/bold red]")
+             
+    except Exception as e:
+        console.print(f"\n❌ Automation Error: {e}", style="red")
+
+
+@app.command("login")
+def login_browser(
+    url: str = typer.Option("https://www.linkedin.com", "--url", "-u", help="URL to login to"),
+):
+    """🔑 Open a browser to login and save the session state."""
+    console.print(Panel("🔑 [bold blue]Browser Login Manager[/bold blue]", expand=False))
+    console.print(f"🌍 Opening {url}...")
+    console.print("👉 Please log in manually in the browser window.")
+    console.print("💾 When finished, close the browser or press ENTER here to save the state.")
+
+    from playwright.sync_api import sync_playwright
+    
+    auth_path = config.DATA_DIR / "auth_state.json"
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context()
+        page = context.new_page()
+        
+        try:
+            page.goto(url)
+            
+            # Wait for user input
+            input("\nPress Enter after you have successfully logged in...")
+            
+            # Save state
+            context.storage_state(path=auth_path)
+            console.print(f"\n✅ Session saved to: [cyan]{auth_path}[/cyan]")
+            console.print("🐳 The Docker container will now use this session to authenticate.")
+            
+        except Exception as e:
+            console.print(f"\n❌ Error during login: {e}", style="red")
+        finally:
+            context.close()
+            browser.close()
+
+
+@app.command("reset-status")
+def reset_status(
+    confirm: bool = typer.Option(False, "--confirm", "-y", help="Confirm reset without prompt"),
+):
+    """🔄 Reset ALL 'applied' jobs back to 'resume_generated' or 'scored'."""
+    console.print(Panel("🔄 [bold red]Reset Job Status[/bold red]", expand=False))
+    
+    if not confirm:
+        if not typer.confirm("Are you sure you want to reset ALL 'applied' jobs? They will be marked as 'resume_generated' or 'scored'."):
+            console.print("Cancelled.")
+            return
+
+    result = db.reset_applied_status()
+    console.print(f"✅ Reset {result['count']} jobs.")
+
+
+
+@app.command("mark-applied")
+def mark_applied(
+    job_id: int = typer.Argument(..., help="Job ID to mark as applied"),
+    status: str = typer.Option("applied", "--status", "-s", help="Custom status (e.g., interview, offer, rejected)"),
+):
+    """✅ Mark a job as applied (or set custom status)."""
+    job = db.get_job(job_id)
+    if not job:
+        console.print(f"❌ Job ID {job_id} not found", style="red")
+        raise typer.Exit(1)
+
+    db.update_status(job_id, status)
+    console.print(f"✅ Set status to '{status}': [cyan]{job.title}[/cyan] at [green]{job.company}[/green]")
 
 
 # ─── Helper Functions ─────────────────────────────────────

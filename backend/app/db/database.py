@@ -299,3 +299,29 @@ class JobDatabase:
             conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
             conn.commit()
         return True
+
+    def reset_applied_status(self) -> dict:
+        """
+        Reset 'applied' status for all jobs. 
+        Reverts to 'resume_generated' if resume path exists, else 'scored'.
+        """
+        changed = 0
+        with self._get_connection() as conn:
+            # First, get all applied jobs
+            rows = conn.execute("SELECT id, resume_path FROM jobs WHERE status = 'applied'").fetchall()
+            
+            for row in rows:
+                job_id = row["id"]
+                resume_path = row["resume_path"]
+                new_status = "resume_generated" if resume_path else "scored"
+                
+                conn.execute(
+                    "UPDATE jobs SET status = ?, applied_at = NULL WHERE id = ?", 
+                    (new_status, job_id)
+                )
+                changed += 1
+                
+            conn.commit()
+            
+        return {"count": changed}
+

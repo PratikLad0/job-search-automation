@@ -26,6 +26,10 @@ export default function ScrapePage() {
         { id: 'greenhouse', name: 'Greenhouse' },
     ];
 
+    const targetLocations = [
+        'India', 'Germany', 'Netherlands', 'UK', 'Singapore', 'UAE', 'Remote'
+    ];
+
     const handleScrape = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -92,6 +96,21 @@ export default function ScrapePage() {
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
                                 />
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {targetLocations.map(loc => (
+                                    <button
+                                        key={loc}
+                                        type="button"
+                                        onClick={() => setLocation(loc)}
+                                        className={`text-xs px-2 py-1 rounded-md border ${location === loc
+                                                ? 'bg-blue-100 border-blue-300 text-blue-800'
+                                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        {loc}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>

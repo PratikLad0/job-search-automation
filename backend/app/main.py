@@ -1,5 +1,14 @@
 import sys
 import os
+import asyncio
+
+# Fix for Windows asyncio loop (required for Playwright) - MUST BE AT TOP
+if sys.platform == 'win32':
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception as e:
+        print(f"Failed to set ProactorEventLoopPolicy: {e}")
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,10 +27,10 @@ ROUTERS = {}
 try:
     # First try relative to the current app structure
     try:
-        from app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant
+        from app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth
     except ImportError:
         # Fallback to absolute backend import
-        from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant
+        from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth
     
     # Success! Add to our map
     ROUTERS['jobs'] = jobs
@@ -31,6 +40,7 @@ try:
     ROUTERS['generators'] = generators
     ROUTERS['profile'] = profile
     ROUTERS['assistant'] = assistant
+    ROUTERS['auth'] = auth
     
     logger.info("✅ All routers successfully imported")
 except ImportError as e:
@@ -38,6 +48,10 @@ except ImportError as e:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Log loop type for debugging
+    loop = asyncio.get_running_loop()
+    logger.info(f"Using event loop: {type(loop).__name__}")
+    
     logger.info("🚀 Job Search Automation Backend Starting...")
     
     # Start the Sequential Queue Worker
@@ -57,6 +71,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to send startup notification: {e}")
         
+    # Periodic Gmail Crawler Task
+    async def periodic_gmail_check():
+        from backend.app.services.email.gmail_crawler import run_gmail_crawler
+        from backend.app.core import config
+        while True:
+            try:
+                logger.info("🔍 Running periodic Gmail check...")
+                await run_gmail_crawler()
+            except Exception as e:
+                logger.error(f"Error in periodic Gmail check: {e}")
+            await asyncio.sleep(config.GMAIL_CHECK_INTERVAL)
+
+    # Start the Gmail crawler task in the background
+    asyncio.create_task(periodic_gmail_check())
+
     yield
     logger.info("🛑 Job Search Automation Backend Stopping...")
 
@@ -131,4 +160,4 @@ async def list_routes():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)

@@ -29,13 +29,15 @@ class AIProvider:
         """Lazy-init Ollama client."""
         if self._ollama_client is None:
             try:
-                import ollama
+                from ollama import Client
+                # Initialize client with the base URL from config
+                client = Client(host=config.OLLAMA_BASE_URL)
                 # Test connection
-                ollama.list()
-                self._ollama_client = ollama
-                logger.info(f"Ollama connected, using model: {config.OLLAMA_MODEL}")
+                client.list()
+                self._ollama_client = client
+                logger.info(f"Ollama connected at {config.OLLAMA_BASE_URL}, using model: {config.OLLAMA_MODEL}")
             except Exception as e:
-                logger.warning(f"Ollama unavailable: {e}")
+                logger.warning(f"Ollama unavailable at {config.OLLAMA_BASE_URL}: {e}")
                 self._ollama_client = False  # Mark as failed
         return self._ollama_client if self._ollama_client else None
 
@@ -92,7 +94,13 @@ class AIProvider:
             raise ConnectionError("Gemini not available")
 
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-        response = model.generate_content(full_prompt)
+        
+        # Add timeout to request options
+        from google.api_core import retry
+        response = model.generate_content(
+            full_prompt,
+            request_options={"timeout": 60}
+        )
         return response.text
 
     def _call_openai(self, prompt: str, system_prompt: str = "") -> str:
@@ -135,16 +143,35 @@ class AIProvider:
 
         last_error = None
         for name in order:
-            try:
-                logger.debug(f"Trying AI provider: {name}")
-                result = providers[name](prompt, system_prompt)
-                if result and result.strip():
-                    logger.info(f"AI response from: {name}")
-                    return result.strip()
-            except Exception as e:
-                logger.warning(f"Provider {name} failed: {e}")
-                last_error = e
-                continue
+            # Retry logic for rate limits (429) or timeouts (Error 4 / DEADLINE_EXCEEDED)
+            retries = 2
+            for attempt in range(retries + 1):
+                try:
+                    logger.debug(f"Trying AI provider: {name} (attempt {attempt + 1})")
+                    result = providers[name](prompt, system_prompt)
+                    if result and result.strip():
+                        logger.info(f"AI response from: {name}")
+                        return result.strip()
+                except Exception as e:
+                    error_msg = str(e)
+                    
+                    # If it's a rate limit error (429) or timeout (4/Deadline), wait a bit and retry
+                    is_retryable = any(code in error_msg for code in ["429", "Error code: 4", "DEADLINE_EXCEEDED"])
+                    
+                    if is_retryable and attempt < retries:
+                        import time
+                        wait_time = (attempt + 1) * 5
+                        logger.warning(f"Provider {name} hit retryable error ({error_msg[:50]}...). Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    
+                    # Connection error hint for Ollama in Docker
+                    if name == "ollama" and ("Connection" in error_msg or "ignored" in error_msg.lower()):
+                        logger.warning("Ollama connection failed. Ensure Ollama is running on host and OLLAMA_HOST=0.0.0.0 is set.")
+                    
+                    logger.warning(f"Provider {name} failed: {e}")
+                    last_error = e
+                    break # Move to next provider
 
         raise RuntimeError(
             f"All AI providers failed. Last error: {last_error}"

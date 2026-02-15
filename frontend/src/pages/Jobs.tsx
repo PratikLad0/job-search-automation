@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { jobsApi } from '../api/client';
 import type { Job } from '../types';
 import { GenerateButton } from '../components/jobs/GenerateButton';
-import { Search, MapPin, Building, Calendar, Star, Filter, X } from 'lucide-react';
+import { Search, MapPin, Building, Calendar, Star, Filter, X, ExternalLink, RefreshCw, BarChart3 } from 'lucide-react';
 import { useWebSocket } from '../context/WebSocketProvider';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '../config';
 
 export default function JobsPage() {
     const { lastEvent } = useWebSocket();
@@ -36,6 +37,19 @@ export default function JobsPage() {
             } else if (taskType === "scraping") {
                 toast.success("Job scraping complete!");
                 loadJobs(); // Refresh the list
+            } else if (taskType === "job_application") {
+                if (lastEvent.data.result?.status === "success") {
+                    toast.success("Successfully applied for the job!");
+                } else {
+                    toast.error(`Application failed: ${lastEvent.data.result?.message || 'Unknown error'}`);
+                }
+                loadJobs();
+            } else if (taskType === "job_scoring") {
+                toast.success("Job scored successfully!");
+                loadJobs();
+            } else if (taskType === "bulk_scoring") {
+                toast.success(lastEvent.data.result?.message || "Bulk scoring complete!");
+                loadJobs();
             }
         }
     }, [lastEvent]);
@@ -65,6 +79,62 @@ export default function JobsPage() {
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleApply = async (jobId: number) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/apply`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                toast.info("Automated application started in background...");
+            } else {
+                const data = await response.json();
+                toast.error(data.detail || "Failed to start automation");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error starting automated application");
+        }
+    };
+
+    const handleScore = async (jobId: number) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/score`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                toast.info("Scoring job in background...");
+            } else {
+                const data = await response.json();
+                toast.error(data.detail || "Failed to start scoring");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error starting job scoring");
+        }
+    };
+
+    const handleScoreAll = async () => {
+        const unscoredCount = jobs.filter(j => j.status === 'scraped').length;
+        if (unscoredCount === 0) {
+            toast.info("No unscored jobs found.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/generators/score_all`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                toast.info(`Starting bulk scoring for ${unscoredCount} jobs...`);
+            } else {
+                toast.error("Failed to start bulk scoring");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error starting bulk scoring");
+        }
     };
 
     return (
@@ -137,7 +207,9 @@ export default function JobsPage() {
                                 <option value="scored">Scored</option>
                                 <option value="applied">Applied</option>
                                 <option value="interview">Interview</option>
+                                <option value="offer">Offer</option>
                                 <option value="rejected">Rejected</option>
+                                <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
 
@@ -153,6 +225,35 @@ export default function JobsPage() {
                                 <option value="hybrid">Hybrid</option>
                                 <option value="onsite">On-site</option>
                             </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Job Source</label>
+                            <select
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
+                                value={filters.source}
+                                onChange={(e) => handleFilterChange('source', e.target.value)}
+                            >
+                                <option value="">All Sources</option>
+                                <option value="linkedin">LinkedIn</option>
+                                <option value="indeed">Indeed</option>
+                                <option value="naukri">Naukri</option>
+                                <option value="adzuna">Adzuna</option>
+                                <option value="findwork">Findwork</option>
+                                <option value="instahyre">Instahyre</option>
+                                <option value="wellfound">Wellfound</option>
+                                <option value="glassdoor">Glassdoor</option>
+                            </select>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-100">
+                            <button
+                                onClick={handleScoreAll}
+                                className="w-full py-2.5 px-4 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Rate All Unscored
+                            </button>
                         </div>
                     </div>
                 </aside>
@@ -172,7 +273,13 @@ export default function JobsPage() {
                         </div>
                     ) : (
                         jobs.map(job => (
-                            <JobCard key={job.id} job={job} />
+                            <JobCard
+                                key={job.id}
+                                job={job}
+                                onApply={() => job.id && handleApply(job.id)}
+                                onScore={() => job.id && handleScore(job.id)}
+                                onStatusUpdate={loadJobs}
+                            />
                         ))
                     )}
                 </main>
@@ -181,17 +288,35 @@ export default function JobsPage() {
     );
 }
 
-function JobCard({ job }: { job: Job }) {
+function JobCard({ job, onApply, onScore, onStatusUpdate }: { job: Job, onApply?: () => void, onScore?: () => void, onStatusUpdate?: () => void }) {
+    const handleStatusChange = async (newStatus: string) => {
+        if (!job.id) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/jobs/${job.id}/status?status=${newStatus}`, { // Using query param as per API update
+                method: 'PUT',
+            });
+            if (response.ok) {
+                toast.success(`Status updated to ${newStatus}`);
+                onStatusUpdate?.(); // Refresh list
+            } else {
+                toast.error("Failed to update status");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error updating status");
+        }
+    };
+
     const scoreColor = (job.match_score || 0) >= 8 ? 'text-green-600 bg-green-50 border-green-100' :
         (job.match_score || 0) >= 6 ? 'text-yellow-600 bg-yellow-50 border-yellow-100' :
             'text-slate-600 bg-slate-50 border-slate-100';
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all duration-300 group">
+        <div className={`bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all duration-300 group ${job.status === 'cancelled' ? 'opacity-60' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors truncate">
+                        <h3 className={`font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors truncate ${job.status === 'cancelled' ? 'line-through text-slate-400' : ''}`}>
                             <a href={job.url} target="_blank" rel="noopener noreferrer">{job.title}</a>
                         </h3>
                         {job.match_score && (
@@ -200,12 +325,34 @@ function JobCard({ job }: { job: Job }) {
                                 {job.match_score.toFixed(1)}/10
                             </span>
                         )}
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${job.status === 'applied' ? 'border-green-200 text-green-700 bg-green-50' :
-                            job.status === 'interview' ? 'border-blue-200 text-blue-700 bg-blue-50' :
-                                'border-slate-200 text-slate-600 bg-slate-50'
-                            }`}>
-                            {job.status}
-                        </span>
+
+                        {/* Status Dropdown */}
+                        <select
+                            value={job.status}
+                            onChange={(e) => handleStatusChange(e.target.value)}
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize cursor-pointer outline-none focus:ring-1 focus:ring-blue-500 ${job.status === 'applied' ? 'border-green-200 text-green-700 bg-green-50' :
+                                    job.status === 'interview' ? 'border-blue-200 text-blue-700 bg-blue-50' :
+                                        job.status === 'rejected' ? 'border-red-200 text-red-700 bg-red-50' :
+                                            job.status === 'offer' ? 'border-purple-200 text-purple-700 bg-purple-50' :
+                                                job.status === 'cancelled' ? 'border-slate-200 text-slate-500 bg-slate-100' :
+                                                    'border-slate-200 text-slate-600 bg-slate-50'
+                                }`}
+                        >
+                            <option value="scraped">Scraped</option>
+                            <option value="scored">Scored</option>
+                            <option value="resume_generated">Resume Generated</option>
+                            <option value="applied">Applied</option>
+                            <option value="interview">Interview</option>
+                            <option value="offer">Offer</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+
+                        {job.source && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
+                                {job.source}
+                            </span>
+                        )}
                     </div>
                     <div className="flex flex-wrap items-center text-slate-500 text-sm gap-y-2 gap-x-5">
                         <span className="flex items-center"><Building className="w-4 h-4 mr-1.5 text-slate-400" /> {job.company}</span>
@@ -214,16 +361,36 @@ function JobCard({ job }: { job: Job }) {
                     </div>
                 </div>
                 <div className="flex flex-col gap-2 ml-4">
+                    <button
+                        onClick={() => job.resume_path ? onApply?.() : toast.error("Generate resume first")}
+                        disabled={job.status === 'applied' || job.status === 'cancelled'}
+                        className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm text-center active:scale-95 ${job.status === 'applied' || job.status === 'cancelled'
+                            ? 'bg-slate-100 text-slate-400 cursor-default shadow-none'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                    >
+                        {job.status === 'applied' ? 'Applied' : job.status === 'cancelled' ? 'Cancelled' : 'Auto Apply'}
+                    </button>
                     <a
                         href={job.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm text-center active:scale-95"
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border border-slate-200 text-slate-600 hover:bg-slate-50 text-center active:scale-95 flex items-center justify-center gap-1.5"
                     >
-                        Apply Now
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Manual Apply
                     </a>
+                    {!job.match_score && (
+                        <button
+                            onClick={onScore}
+                            className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border border-blue-200 text-blue-600 hover:bg-blue-50 text-center active:scale-95 flex items-center justify-center gap-1.5"
+                        >
+                            <BarChart3 className="w-3.5 h-3.5" />
+                            Score Job
+                        </button>
+                    )}
                     <GenerateButton
-                        jobId={job.id}
+                        jobId={job.id || 0}
                         status={job.status}
                         resumePath={job.resume_path}
                         coverLetterPath={job.cover_letter_path}

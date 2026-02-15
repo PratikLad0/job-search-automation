@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { Stats } from '../types';
 import { statsApi } from '../api/client';
 import { BarChart3, TrendingUp, Users, CheckCircle, Briefcase, Activity } from 'lucide-react';
