@@ -5,23 +5,43 @@ You can view the interactive Swagger documentation at `http://localhost:8000/doc
 
 ## Core Endpoints
 
-### 🟢 Jobs
+### 🔐 Authentication (`/auth`)
+- `GET /auth/login`: Initiate Google OAuth2 flow.
+- `GET /auth/callback`: Handle Google OAuth2 callback.
+- `GET /auth/status`: Check if Google authentication is active.
+
+### 👤 Profile (`/profile`)
+- `GET /profile/`: Get the current user profile.
+- `PUT /profile/`: Update user profile details.
+- `DELETE /profile/`: Delete user profile (GDPR).
+- `POST /profile/upload-resume`: Upload a resume (PDF/DOCX) to auto-populate profile via AI.
+
+### 🟢 Jobs (`/jobs`)
 - `GET /jobs`: List all jobs with filters (status, min_score, location, query, etc.).
 - `GET /jobs/{id}`: Get detailed info for a single job.
 - `POST /jobs/{id}/applied`: Mark a job as applied.
 
-### 🤖 Generation
+### 🏢 Company Search (`/company`)
+- `POST /company/search`: Trigger a targeted AI search for a specific company's career page.
+  - Body: `{ "company_name": "Anthropic", "locations": ["Remote", "SF"] }`
+
+### 📧 Emails (`/emails`)
+- `GET /emails/`: List job-related emails.
+- `GET /emails/{id}`: Get specific email details.
+- `POST /emails/{id}/reply`: Generate an AI reply for an email.
+
+### 🤖 Generation (`/generate`)
 - `POST /generate/{id}`: Trigger background generation of Resume and Cover Letter for a job.
 
-### 🕷️ Scrapers
+### 🕷️ Scrapers (`/scrapers`)
 - `POST /scrapers/run`: Trigger a background scraping task.
   - Body: `{ "source": "linkedin", "query": "python", "location": "remote" }`
 
-### 💬 Chat
-- `POST /chat/`: Send a message to the AI career assistant.
-  - Body: `{ "message": "How do I improve my resume?", "context": "optional context" }`
+### 💬 Assistant (`/assistant`)
+- `WS /assistant/ws`: WebSocket endpoint for real-time AI chat.
+  - Payload processes `chat` messages and `ping`.
 
-### 📊 Stats
+### 📊 Stats (`/stats`)
 - `GET /stats`: Get dashboard statistics (total jobs, application status counts, sources).
 
 ## Data Models
@@ -39,12 +59,12 @@ You can view the interactive Swagger documentation at `http://localhost:8000/doc
 }
 ```
 
-### Stats
+### Profile
 ```json
 {
-  "total": 150,
-  "avg_score": 7.2,
-  "by_status": { "applied": 10, "scraped": 140 },
-  "by_source": { "linkedin": 100, "indeed": 50 }
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "skills": ["Python", "React"],
+  "experience": [...]
 }
 ```

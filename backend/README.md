@@ -2,11 +2,24 @@
 
 Python-based API, scrapers, and AI engine for the Job Search Automation project.
 
-## 🛠️ Features
-- **Job Scraping**: LinkedIn, Indeed, RemoteOK, Naukri, Glassdoor, and more.
-- **AI Scoring**: Ollama, Gemini, OpenAI integration.
-- **Resume Generator**: PDF generation with Jinja2 and WeasyPrint.
-- **Notifications**: Telegram bot and Email alerts.
+## 🛠️ Components
+
+### 1. API Services (`app/api`)
+- **Routers**: Modular endpoints for Jobs, Auth, Profile, Assistant, Emails, and Company Search.
+- **WebSocket**: Real-time communication for the AI Assistant.
+
+### 2. Scrapers (`app/services/scrapers`)
+- **Playwright Scraper**: Handles dynamic sites (LinkedIn, Glassdoor) using browser automation.
+- **AI Company Scraper**: targeted searching of company career pages using LLM extraction.
+- **BeautifulSoup**: Fallback for static content.
+
+### 3. AI Engine (`app/services/ai`)
+- **LLM Provider**: Configurable to use **Ollama** (local) or **Gemini/OpenAI** (cloud).
+- **Extraction**: JSON mode used for structured job data extraction.
+- **Generation**: Resume and Cover Letter tailoring.
+
+### 4. Background Workers
+- **Queue Manager**: Sequential processing of resource-intensive tasks (Scraping, AI Generation) to prevent server overload.
 
 ## 🚀 Setup
 
@@ -45,13 +58,16 @@ Python-based API, scrapers, and AI engine for the Job Search Automation project.
 
 ### Running the Application
 
-**Run the API Server**:
+**Recommended (Windows & Linux)**:
+Use the `run.py` script. This ensures the correct asyncio event loop policy is applied (critical for Playwright on Windows).
+
 ```bash
-python -m uvicorn app.main:app --reload
+python run.py
 ```
+
 Access Swagger UI at `http://localhost:8000/docs`.
 
-**Run CLI Commands**:
+### CLI Commands
 The application also provides a CLI interface.
 ```bash
 # List available commands

@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Database, MessageSquare, Settings, FileText, User } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Database, MessageSquare, Settings, FileText, User, Mail, Search } from 'lucide-react';
 
 export function Sidebar() {
     const navItems = [
         { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/emails', icon: Mail, label: 'Inbox' },
         { to: '/jobs', icon: Briefcase, label: 'Jobs' },
+        { to: '/search', icon: Search, label: 'Search' },
         { to: '/scrape', icon: Database, label: 'Scrapers' },
         { to: '/chat', icon: MessageSquare, label: 'Assistant' },
         { to: '/profile', icon: User, label: 'Profile' },

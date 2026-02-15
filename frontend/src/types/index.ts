@@ -15,6 +15,9 @@ export interface Job {
     status: string;
     resume_path?: string;
     cover_letter_path?: string;
+    recruiter_email?: string;
+    recruiter_name?: string;
+    application_form_url?: string;
 }
 
 export interface Stats {

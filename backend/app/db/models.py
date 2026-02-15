@@ -34,6 +34,11 @@ class Job:
     cover_letter_path: str = ""
     applied_at: Optional[str] = None
     notes: str = ""
+    
+    # Contact & Application Info
+    recruiter_email: str = ""
+    recruiter_name: str = ""
+    application_form_url: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -165,6 +170,31 @@ class UserProfile:
 
     @classmethod
     def from_dict(cls, data: dict) -> "UserProfile":
+        valid_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        filtered = {k: v for k, v in data.items() if k in valid_fields}
+        return cls(**filtered)
+
+
+@dataclass
+class Email:
+    """Represents a job-related email."""
+    id: Optional[int] = None
+    sender: str = ""
+    subject: str = ""
+    body: str = ""  # HTML or Text content
+    snippet: str = ""
+    received_at: str = ""
+    is_read: bool = False
+    labels: str = "[]"  # JSON list of labels
+    has_reply: bool = False
+    reply_content: str = ""
+    telegram_message_id: Optional[int] = None
+    
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Email":
         valid_fields = {f.name for f in cls.__dataclass_fields__.values()}
         filtered = {k: v for k, v in data.items() if k in valid_fields}
         return cls(**filtered)

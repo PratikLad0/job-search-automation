@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from backend.app.db.models import Job
 from backend.app.core import config
+from backend.app.services.parsers.utils import extract_contact_info
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,13 @@ def enrich_jobs_with_descriptions(jobs: list[Job], max_fetch: int = 10) -> list[
             description = fetch_job_description(job)
             if description:
                 job.description = description
+                
+                # Extract contact info
+                contact_info = extract_contact_info(job.description)
+                job.recruiter_email = contact_info.get("recruiter_email", "")
+                job.recruiter_name = contact_info.get("recruiter_name", "")
+                job.application_form_url = contact_info.get("application_form_url", "")
+                
                 fetched += 1
 
             # Delay between fetches

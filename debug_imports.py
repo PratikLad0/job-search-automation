@@ -1,21 +1,26 @@
+
 import sys
 import os
-from pathlib import Path
 import traceback
 
-# Add project root to sys.path
-root = Path(__file__).resolve().parent
-sys.path.append(str(root))
+try:
+    with open("debug_log.txt", "w", encoding="utf-8") as f:
+        # Add the project root to sys.path
+        ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+        if ROOT_PATH not in sys.path:
+            sys.path.append(ROOT_PATH)
 
-routers = ["jobs", "stats", "scrapers", "chat", "generators", "profile"]
+        f.write(f"sys.path: {sys.path}\n")
 
-for r in routers:
-    try:
-        module_path = f"backend.app.api.routers.{r}"
-        print(f"Attempting to import {module_path}...")
-        __import__(module_path)
-        print(f"✅ {r} imported successfully")
-    except Exception as e:
-        print(f"❌ Failed to import {r}:")
-        traceback.print_exc()
-        print("-" * 40)
+        routers = ["jobs", "stats", "scrapers", "chat", "generators", "profile", "assistant", "auth", "company"]
+
+        for name in routers:
+            f.write(f"\n--- Importing {name} router ---\n")
+            try:
+                module = __import__(f"backend.app.api.routers.{name}", fromlist=["router"])
+                f.write(f"✅ {name} router imported\n")
+            except Exception:
+                f.write(f"❌ {name} router FAILED\n")
+                traceback.print_exc(file=f)
+except Exception as e:
+    print(f"Failed to write log: {e}")

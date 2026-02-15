@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from backend.app.db.models import Job
+from backend.app.db.models import Job, Email
 from backend.app.core import config
 from backend.app.core.logger import logger
 
@@ -91,6 +91,31 @@ class JobDatabase:
                     about_me TEXT DEFAULT ''
                 )
             """)
+
+            
+            # Emails Table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS emails (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sender TEXT DEFAULT '',
+                    subject TEXT DEFAULT '',
+                    body TEXT DEFAULT '',
+                    snippet TEXT DEFAULT '',
+                    received_at TEXT DEFAULT '',
+                    is_read BOOLEAN DEFAULT 0,
+                    labels TEXT DEFAULT '[]',
+                    has_reply BOOLEAN DEFAULT 0,
+                    reply_content TEXT DEFAULT '',
+                    telegram_message_id INTEGER
+                )
+            """)
+            
+            # Migration: Ensure telegram_message_id exists
+            try:
+                conn.execute("ALTER TABLE emails ADD COLUMN telegram_message_id INTEGER")
+            except Exception:
+                pass # Column likely exists
+
             conn.commit()
 
     def get_profile(self, profile_id: int = 1) -> Optional["UserProfile"]:
@@ -325,3 +350,61 @@ class JobDatabase:
             
         return {"count": changed}
 
+
+    def add_email(self, email: Email) -> Optional[int]:
+        """Save an email to the database."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.execute("""
+                    INSERT INTO emails (
+                        sender, subject, body, snippet, received_at,
+                        is_read, labels, has_reply, reply_content, telegram_message_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    email.sender, email.subject, email.body, email.snippet,
+                    email.received_at, email.is_read, email.labels,
+                    email.has_reply, email.reply_content, email.telegram_message_id
+                ))
+                conn.commit()
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"Failed to add email: {e}")
+            return None
+
+    def get_emails(self, skip: int = 0, limit: int = 50) -> list[Email]:
+        """Get listed emails."""
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM emails ORDER BY received_at DESC LIMIT ? OFFSET ?", 
+                (limit, skip)
+            ).fetchall()
+            return [Email.from_dict(dict(row)) for row in rows]
+
+    def get_email(self, email_id: int) -> Optional[Email]:
+        """Get a single email by ID."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM emails WHERE id = ?", (email_id,)).fetchone()
+            if row:
+                return Email.from_dict(dict(row))
+        return None
+
+    def update_email(self, email_id: int, **kwargs) -> bool:
+        """Update specific fields of an email."""
+        if not kwargs:
+            return False
+
+        set_clause = ", ".join(f"{k} = ?" for k in kwargs)
+        values = list(kwargs.values()) + [email_id]
+
+        with self._get_connection() as conn:
+            conn.execute(f"UPDATE emails SET {set_clause} WHERE id = ?", values)
+            conn.commit()
+        return True
+
+    def get_email_by_telegram_id(self, message_id: int) -> Optional[Email]:
+        """Get email by its Telegram message ID."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM emails WHERE telegram_message_id = ?", (message_id,)).fetchone()
+            if row:
+                return Email.from_dict(dict(row))
+        return None

@@ -4,7 +4,7 @@ This document explains how the Job Search Automation tool handles browser-based 
 
 ## How it Works
 
-The tool uses **Playwright**, a browser automation library, to interact with job portals. 
+The tool uses **Playwright**, a browser automation library, to interact with job portals.
 
 ### Key Features
 1.  **Persistent Browser Context**: It uses your actual browser session (e.g., Chrome or Edge) so that you remain logged into Indeed, LinkedIn, etc.
@@ -15,14 +15,27 @@ The tool uses **Playwright**, a browser automation library, to interact with job
 
 ## Setup Requirements
 
-### 1. Browser Login
+### 1. Google Authentication (Gmail API)
+To enable Email features (Inbox, Smart Reply), you need to set up Google OAuth:
+
+1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2.  Create a new project.
+3.  Enable the **Gmail API**.
+4.  Configure the **OAuth Consent Screen** (User Type: External, Add Test Users).
+5.  Create **OAuth Client ID** credentials (Application Type: Desktop App).
+6.  Download the JSON file, rename it to `credentials.json`, and place it in the `backend/` directory.
+
+### 2. Browser Login
 Before starting the automation, ensure you are logged into your target job portal (e.g., [Indeed](https://www.indeed.com)) in your default browser. The automation will "piggyback" on this session.
 
-### 2. Playwright Installation
+### 3. Playwright Installation
 The backend requires Playwright browsers to be installed. Run the following command in your terminal:
 ```powershell
 playwright install chromium
 ```
+
+> **IMPORTANT FOR WINDOWS USERS**:
+> Always start the backend using `python backend/run.py` instead of uvicorn directly. This script enforces the `ProactorEventLoopPolicy` required for Playwright to function correctly on Windows.
 
 ---
 
@@ -59,9 +72,3 @@ If you get an error saying your browser profile is in use:
 
 > [!WARNING]
 > While automation is running, do not close the browser window that Playwright opens (if running in non-headless mode). Let it finish the steps and close automatically.
-
----
-
-## Safety & Rate Limiting
-- The tool includes **randomized delays** between clicks and typing to mimic human behavior and avoid being flagged as a bot.
-- It is recommended to apply for no more than 10-15 jobs per day to stay within natural usage patterns.

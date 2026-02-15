@@ -1,0 +1,28 @@
+sys.path: ['C:\\genai\\JobSearchAutomation', 'C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python310\\python310.zip', 'C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python310\\DLLs', 'C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python310\\lib', 'C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python310', 'C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages']
+
+--- Importing jobs router ---
+✅ jobs router imported
+
+--- Importing stats router ---
+✅ stats router imported
+
+--- Importing scrapers router ---
+✅ scrapers router imported
+
+--- Importing chat router ---
+✅ chat router imported
+
+--- Importing generators router ---
+✅ generators router imported
+
+--- Importing profile router ---
+✅ profile router imported
+
+--- Importing assistant router ---
+✅ assistant router imported
+
+--- Importing auth router ---
+✅ auth router imported
+
+--- Importing company router ---
+✅ company router imported

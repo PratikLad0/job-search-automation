@@ -8,16 +8,20 @@ A powerful, self-hosted web application to automate your job search. Scrape job 
 
 This project is divided into two main components:
 
-- **[Backend](backend/README.md)**: Python-based API, scrapers, and AI engine.
+- **[Backend](backend/README.md)**: Python-based API, scrapers, AI engine, and background workers.
 - **[Frontend](frontend/README.md)**: React + TypeScript web interface.
 
 ## ✨ Key Features
 
 - **🔎 Automated Scraping**: Support for LinkedIn, Indeed, RemoteOK, Naukri, Glassdoor, and more.
+- **🎯 AI Company Search**: Targeted scraping of specific company career pages using AI.
 - **🤖 AI-Powered Matching**: Scores jobs against your CV using local LLMs (Ollama) or cloud APIs (Gemini/OpenAI).
 - **📝 Document Generation**: Auto-generates tailored Resumes (PDF) and Cover Letters.
+- **📧 Smart Inbox**: Manage job-related emails, track applications, and generate AI replies.
+- **💬 AI Career Assistant**: Real-time chat assistant for interview prep and career advice.
+- **🔐 Google Integration**: Seamless Gmail and Google Auth integration.
 - **📊 Advanced Dashboard**: Visualize progress, filter jobs, and manage applications.
-- **🔔 Notifications**: Real-time alerts via Telegram and Email.
+- **🔔 Notifications**: Real-time alerts via Telegram.
 
 ## 🚀 Quick Start
 
@@ -26,15 +30,18 @@ Navigate to the `backend` directory and follow the instructions in [backend/READ
 
 ```bash
 cd backend
-# Follow setup steps...
+# Install dependencies... (see backend/README.md)
+python run.py
 ```
+> **Note for Windows Users**: Always use `python run.py` to start the backend. This ensures the correct asyncio event loop is used for Playwright.
 
 ### 2. Frontend Setup
 Navigate to the `frontend` directory and follow the instructions in [frontend/README.md](frontend/README.md).
 
 ```bash
 cd frontend
-# Follow setup steps...
+npm install
+npm run dev
 ```
 
 ## 🤝 Contributing

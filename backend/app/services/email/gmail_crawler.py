@@ -7,12 +7,14 @@ from googleapiclient.errors import HttpError
 from backend.app.core import config
 from backend.app.core.logger import logger
 from backend.app.services.notifications.telegram_bot import TelegramNotifier
+from backend.app.db.database import JobDatabase
 
 class GmailCrawler:
     """Service to crawl Gmail for job-related emails."""
 
     def __init__(self):
         self.notifier = TelegramNotifier()
+        self.db = JobDatabase()
         self.service = self._get_gmail_service()
         self.cache_file = config.DATA_DIR / "email_cache.json"
         self.processed_ids = self._load_cache()
@@ -90,6 +92,7 @@ class GmailCrawler:
                 safe_snippet = html.escape(snippet)
 
                 # Send Telegram notification
+                # Send Telegram notification
                 notification_text = (
                     f"📧 <b>Important Email Found!</b>\n"
                     f"👤 <b>From:</b> {safe_sender}\n"
@@ -97,9 +100,30 @@ class GmailCrawler:
                     f"<i>{safe_snippet}...</i>"
                 )
                 
-                success = await self.notifier.send_message(notification_text)
-                if success:
-                    logger.info(f"Notification sent for email: {subject}")
+                # Capture the message ID returned by send_message
+                msg_id_telegram = await self.notifier.send_message(notification_text)
+                
+                if msg_id_telegram:
+                    logger.info(f"Notification sent for email: {subject} (Telegram ID: {msg_id_telegram})")
+                    
+                    # Save email to DB
+                    from backend.app.db.models import Email
+                    # Extract date from headers
+                    date_str = next((h['value'] for h in headers if h['name'] == 'Date'), "")
+                    
+                    email_obj = Email(
+                        sender=sender,
+                        subject=subject,
+                        body=snippet, # Storing snippet as body for now, can improve to fetch full body later
+                        snippet=snippet,
+                        received_at=date_str,
+                        is_read=False,
+                        labels=json.dumps(msg.get('labelIds', [])),
+                        has_reply=False,
+                        telegram_message_id=msg_id_telegram
+                    )
+                    self.db.add_email(email_obj)
+                    
                     self.processed_ids.add(msg_id)
                     new_notifications = True
             

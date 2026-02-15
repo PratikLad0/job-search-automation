@@ -27,10 +27,10 @@ ROUTERS = {}
 try:
     # First try relative to the current app structure
     try:
-        from app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth
+        from app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth, company
     except ImportError:
         # Fallback to absolute backend import
-        from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth
+        from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth, company
     
     # Success! Add to our map
     ROUTERS['jobs'] = jobs
@@ -40,7 +40,19 @@ try:
     ROUTERS['generators'] = generators
     ROUTERS['profile'] = profile
     ROUTERS['assistant'] = assistant
+    ROUTERS['company'] = company
     ROUTERS['auth'] = auth
+    
+    # Try to import emails router (newly added)
+    try:
+        from app.api.routers import emails
+        ROUTERS['emails'] = emails
+    except ImportError:
+         try:
+            from backend.app.api.routers import emails
+            ROUTERS['emails'] = emails
+         except ImportError:
+            logger.warning("Could not import emails router")
     
     logger.info("✅ All routers successfully imported")
 except ImportError as e:
@@ -66,10 +78,18 @@ async def lifespan(app: FastAPI):
     try:
         from backend.app.services.notifications.telegram_bot import TelegramNotifier
         bot = TelegramNotifier()
+        await bot.start()
         if bot._enabled:
-            await bot.send_message("🚀 <b>Job Search Automation Backend Scraper Started</b>")
+            startup_msg = (
+                "🚀 <b>Job Search Automation Backend Scraper Started</b>\n\n"
+                "🤖 <b>Available Commands:</b>\n"
+                "/jobs - Show recent top matches\n"
+                "/status - Check system status\n"
+                "/help - Show all commands"
+            )
+            await bot.send_message(startup_msg)
     except Exception as e:
-        logger.error(f"Failed to send startup notification: {e}")
+        logger.error(f"Failed to start Telegram bot: {e}")
         
     # Periodic Gmail Crawler Task
     async def periodic_gmail_check():
@@ -88,6 +108,12 @@ async def lifespan(app: FastAPI):
 
     yield
     logger.info("🛑 Job Search Automation Backend Stopping...")
+    try:
+        from backend.app.services.notifications.telegram_bot import TelegramNotifier
+        bot = TelegramNotifier()
+        await bot.stop()
+    except Exception as e:
+        logger.error(f"Failed to stop Telegram bot: {e}")
 
 app = FastAPI(
     title="Job Search Automation API",

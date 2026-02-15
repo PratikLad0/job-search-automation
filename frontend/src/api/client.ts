@@ -33,3 +33,18 @@ export const statsApi = {
         return response.data;
     },
 };
+
+export const emailsApi = {
+    list: async (skip: number = 0, limit: number = 50) => {
+        const response = await api.get(`/emails/?skip=${skip}&limit=${limit}`);
+        return response.data;
+    },
+    get: async (id: number) => {
+        const response = await api.get(`/emails/${id}`);
+        return response.data;
+    },
+    reply: async (id: number) => {
+        const response = await api.post(`/emails/${id}/reply`);
+        return response.data;
+    }
+};
