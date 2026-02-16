@@ -1,6 +1,7 @@
 
 import asyncio
 import logging
+import random
 import urllib.parse
 from datetime import datetime
 from typing import List, Optional
@@ -55,29 +56,45 @@ class AICompanyScraper(BaseScraper):
             return None
 
     async def _search_url_on_engine(self, page: Page, query: str, engine: str = "ddg") -> Optional[str]:
-        """Generic search helper for different engines."""
+        """Human-like search helper for different engines."""
         try:
             if engine == "ddg":
-                url = f"https://duckduckgo.com/?q={urllib.parse.quote(query)}"
-                selector = 'a[data-testid="result-title-a"]'
+                home_url = "https://duckduckgo.com/"
+                input_selector = 'input[name="q"]'
+                result_selector = 'a[data-testid="result-title-a"]'
             else: # bing
-                url = f"https://www.bing.com/search?q={urllib.parse.quote(query)}"
-                selector = '#b_results a'
+                home_url = "https://www.bing.com/"
+                input_selector = 'input[name="q"]'
+                result_selector = '#b_results .b_algo h2 a'
 
             logger.info(f"Searching {engine.upper()}: {query}")
-            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            await page.wait_for_timeout(2000)
             
+            # 1. Visit Homepage
+            await page.goto(home_url, wait_until="networkidle", timeout=30000)
+            await asyncio.sleep(random.uniform(1.5, 3.0))
+            
+            # 2. Type query naturally
+            await page.click(input_selector)
+            await page.type(input_selector, query, delay=random.uniform(50, 150))
+            await asyncio.sleep(random.uniform(0.5, 1.0))
+            await page.press(input_selector, "Enter")
+            
+            # 3. Wait for results
             try:
-                await page.wait_for_selector(selector, timeout=10000)
+                # Use a combined search for results or common result containers
+                await page.wait_for_selector(result_selector, timeout=15000)
+                await asyncio.sleep(random.uniform(2.0, 4.0)) # Relax after search
             except:
-                logger.warning(f"{engine.upper()} search results not found/blocked.")
+                logger.warning(f"{engine.upper()} search results not found or blocked (Capturing Source).")
+                content = await page.content()
+                with open(f"debug_{engine}_blocked.html", "w", encoding="utf-8") as f:
+                    f.write(content)
                 return None
                 
             links = await page.evaluate(f'''(sel) => {{
                 const anchors = Array.from(document.querySelectorAll(sel));
                 return anchors.map(a => a.href);
-            }}''', selector)
+            }}''', result_selector)
             
             for url in links:
                 if not url or not url.startswith("http"): continue

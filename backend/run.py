@@ -6,10 +6,39 @@ import uvicorn
 import logging
 
 try:
-    from watchfiles import run_process
+    from watchfiles import run_process, DefaultFilter
 except ImportError:
     print("❌ watchfiles not installed. Run 'pip install watchfiles'")
     sys.exit(1)
+
+class ServerFilter(DefaultFilter):
+    """
+    Custom filter for watchfiles to ignore generated files and directories.
+    This prevents the server from restarting every time it writes to a log or database.
+    """
+    def __call__(self, change, path):
+        # Use default ignores (like .git, __pycache__, etc.)
+        if not super().__call__(change, path):
+            return False
+        
+        path_lower = path.lower()
+        # Normalize separators for consistent checking
+        normalized_path = path_lower.replace('\\', '/')
+        parts = normalized_path.split('/')
+        
+        # 1. Ignore specific directories
+        ignore_dirs = {'data', 'output', 'venv', 'logs', '.pytest_cache', '__pycache__'}
+        if any(d in parts for d in ignore_dirs):
+            return False
+            
+        # 2. Ignore generated file types that often change
+        ignore_exts = {'.txt', '.log', '.png', '.html', '.db', '.pdf', '.docx'}
+        if any(path_lower.endswith(ext) for ext in ignore_exts):
+            # Never ignore python files
+            if not path_lower.endswith('.py'):
+                return False
+                
+        return True
 
 def run_server():
     """
@@ -32,9 +61,8 @@ def run_server():
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
-    print(f"🚀 Starting Job Search Automation Backend (Custom Reloader + Proactor Loop)")
+    print(f"🚀 Starting Job Search Automation Backend (Custom Reloader + Noise Filter)")
     print(f"📂 Watching: {current_dir}")
 
-    # Use watchfiles to monitor changes and restart the process
-    # This ensures a fresh process is spawned where we can set the event loop policy correctly
-    run_process(current_dir, target=run_server)
+    # Use watchfiles with the custom noise filter
+    run_process(current_dir, target=run_server, watch_filter=ServerFilter())

@@ -19,44 +19,24 @@ if ROOT_PATH not in sys.path:
     sys.path.append(ROOT_PATH)
 
 from backend.app.core.logger import logger
+from backend.app.api.routers import (
+    jobs, stats, scrapers, chat, generators, 
+    profile, assistant, auth, company, emails
+)
 
-# Track successfully imported routers in a dictionary to avoid scope issues
-ROUTERS = {}
-
-# Try to import routers
-try:
-    # First try relative to the current app structure
-    try:
-        from app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth, company
-    except ImportError:
-        # Fallback to absolute backend import
-        from backend.app.api.routers import jobs, stats, scrapers, chat, generators, profile, assistant, auth, company
-    
-    # Success! Add to our map
-    ROUTERS['jobs'] = jobs
-    ROUTERS['stats'] = stats
-    ROUTERS['scrapers'] = scrapers
-    ROUTERS['chat'] = chat
-    ROUTERS['generators'] = generators
-    ROUTERS['profile'] = profile
-    ROUTERS['assistant'] = assistant
-    ROUTERS['company'] = company
-    ROUTERS['auth'] = auth
-    
-    # Try to import emails router (newly added)
-    try:
-        from app.api.routers import emails
-        ROUTERS['emails'] = emails
-    except ImportError:
-         try:
-            from backend.app.api.routers import emails
-            ROUTERS['emails'] = emails
-         except ImportError:
-            logger.warning("Could not import emails router")
-    
-    logger.info("✅ All routers successfully imported")
-except ImportError as e:
-    logger.error(f"❌ Critical Import Error: {e}")
+# Track routers in a dictionary for cleaner registration
+ROUTERS = {
+    'jobs': jobs,
+    'stats': stats,
+    'scrapers': scrapers,
+    'chat': chat,
+    'generators': generators,
+    'profile': profile,
+    'assistant': assistant,
+    'company': company,
+    'auth': auth,
+    'emails': emails
+}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -64,7 +44,7 @@ async def lifespan(app: FastAPI):
     loop = asyncio.get_running_loop()
     logger.info(f"Using event loop: {type(loop).__name__}")
     
-    logger.info("🚀 Job Search Automation Backend Starting...")
+    logger.info("🚀 Job Search Automation Backend Starting (Local Mode)...")
     
     # Start the Sequential Queue Worker
     try:
@@ -74,22 +54,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Failed to start Queue Worker: {e}")
 
-    # Initialize Telegram Bot
+    # Initialize Telegram Bot (Optional for local)
     try:
         from backend.app.services.notifications.telegram_bot import TelegramNotifier
         bot = TelegramNotifier()
         await bot.start()
         if bot._enabled:
             startup_msg = (
-                "🚀 <b>Job Search Automation Backend Scraper Started</b>\n\n"
+                "🚀 <b>Job Search Automation (Local) Started</b>\n\n"
                 "🤖 <b>Available Commands:</b>\n"
                 "/jobs - Show recent top matches\n"
-                "/status - Check system status\n"
-                "/help - Show all commands"
+                "/status - Check system status"
             )
             await bot.send_message(startup_msg)
     except Exception as e:
-        logger.error(f"Failed to start Telegram bot: {e}")
+        logger.warning(f"Telegram bot not initialized: {e}")
         
     # Periodic Gmail Crawler Task
     async def periodic_gmail_check():
@@ -97,7 +76,7 @@ async def lifespan(app: FastAPI):
         from backend.app.core import config
         while True:
             try:
-                logger.info("🔍 Running periodic Gmail check...")
+                logger.info("🔍 Running periodic Gmail check (Local)...")
                 await run_gmail_crawler()
             except Exception as e:
                 logger.error(f"Error in periodic Gmail check: {e}")
@@ -107,29 +86,30 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(periodic_gmail_check())
 
     yield
-    logger.info("🛑 Job Search Automation Backend Stopping...")
-    try:
-        from backend.app.services.notifications.telegram_bot import TelegramNotifier
-        bot = TelegramNotifier()
-        await bot.stop()
-    except Exception as e:
-        logger.error(f"Failed to stop Telegram bot: {e}")
+    logger.info("🛑 Job Search Automation Backend Stopped.")
 
 app = FastAPI(
     title="Job Search Automation API",
     description="Backend for Job Search Automation Tool",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan
 )
 
+# Optimized CORS for Localhost
 origins = [
     "http://localhost:5173",
     "http://localhost:5174",
-    "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
-    "http://127.0.0.1:3000",
 ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.middleware("http")
 async def log_requests(request, call_next):
@@ -138,32 +118,14 @@ async def log_requests(request, call_next):
     logger.info(f"📤 {response.status_code} {request.url.path}")
     return response
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-try:
-    logger.info("📦 Registering routers...")
-    registered_count = 0
-    for name, module in ROUTERS.items():
-        if module and hasattr(module, 'router'):
-            app.include_router(module.router)
-            # Add WebSocket route explicitly if it's the assistant
-            if name == "assistant":
-                 logger.info(f"  ✅ Router '{name}' registered with WebSocket /assistant/ws")
-            else:
-                 logger.info(f"  ✅ Router '{name}' registered")
-            registered_count += 1
-        else:
-            logger.warning(f"  ⚠️ Router '{name}' NOT found or has no .router")
-            
-    logger.info(f"✅ Route registration complete. {registered_count} routers active: {list(ROUTERS.keys())}")
-except Exception as e:
-    logger.error(f"❌ Unexpected error during router registration: {e}")
+# Standard Router Registration
+logger.info("📦 Registering routers...")
+for name, module in ROUTERS.items():
+    if hasattr(module, 'router'):
+        app.include_router(module.router)
+        logger.info(f"  ✅ Router '{name}' registered")
+    else:
+        logger.warning(f"  ⚠️ Router '{name}' has no .router")
 
 @app.get("/")
 async def root():

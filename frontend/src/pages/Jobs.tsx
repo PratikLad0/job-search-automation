@@ -6,6 +6,7 @@ import { Search, MapPin, Building, Calendar, Star, Filter, X, ExternalLink, Refr
 import { useWebSocket } from '../context/WebSocketProvider';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '../config';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function JobsPage() {
     const { lastEvent } = useWebSocket();
@@ -20,35 +21,18 @@ export default function JobsPage() {
     });
     const [showFilters, setShowFilters] = useState(false);
 
-    // Listen for background job updates from WebSocket
     useEffect(() => {
         if (lastEvent?.type === "task_finished") {
             const taskType = lastEvent.data.task.type;
-
-            if (taskType === "resume_generation") {
-                toast.success("Resume generated successfully!");
-                loadJobs(); // Refresh the list to get new paths
-            } else if (taskType === "cover_letter_generation") {
-                toast.success("Cover letter generated successfully!");
-                loadJobs(); // Refresh the list to get new paths
-            } else if (taskType === "document_generation") {
-                toast.success("Documents generated successfully!");
-                loadJobs(); // Refresh the list to get new paths
-            } else if (taskType === "scraping") {
-                toast.success("Job scraping complete!");
-                loadJobs(); // Refresh the list
+            if (["resume_generation", "cover_letter_generation", "document_generation", "scraping", "job_scoring", "bulk_scoring"].includes(taskType)) {
+                toast.success(`${taskType.replace('_', ' ')} complete!`);
+                loadJobs();
             } else if (taskType === "job_application") {
                 if (lastEvent.data.result?.status === "success") {
                     toast.success("Successfully applied for the job!");
                 } else {
                     toast.error(`Application failed: ${lastEvent.data.result?.message || 'Unknown error'}`);
                 }
-                loadJobs();
-            } else if (taskType === "job_scoring") {
-                toast.success("Job scored successfully!");
-                loadJobs();
-            } else if (taskType === "bulk_scoring") {
-                toast.success(lastEvent.data.result?.message || "Bulk scoring complete!");
                 loadJobs();
             }
         }
@@ -57,7 +41,7 @@ export default function JobsPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             loadJobs();
-        }, 300); // Debounce
+        }, 300);
         return () => clearTimeout(timer);
     }, [filters]);
 
@@ -83,122 +67,98 @@ export default function JobsPage() {
 
     const handleApply = async (jobId: number) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/apply`, {
-                method: 'POST',
-            });
-            if (response.ok) {
-                toast.info("Automated application started in background...");
-            } else {
-                const data = await response.json();
-                toast.error(data.detail || "Failed to start automation");
-            }
+            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/apply`, { method: 'POST' });
+            if (response.ok) toast.info("Automated application started...");
+            else toast.error("Failed to start automation");
         } catch (error) {
-            console.error(error);
             toast.error("Error starting automated application");
         }
     };
 
     const handleScore = async (jobId: number) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/score`, {
-                method: 'POST',
-            });
-            if (response.ok) {
-                toast.info("Scoring job in background...");
-            } else {
-                const data = await response.json();
-                toast.error(data.detail || "Failed to start scoring");
-            }
+            const response = await fetch(`${API_BASE_URL}/generators/${jobId}/score`, { method: 'POST' });
+            if (response.ok) toast.info("Scoring job in background...");
+            else toast.error("Failed to start scoring");
         } catch (error) {
-            console.error(error);
             toast.error("Error starting job scoring");
         }
     };
 
     const handleScoreAll = async () => {
         const unscoredCount = jobs.filter(j => j.status === 'scraped').length;
-        if (unscoredCount === 0) {
-            toast.info("No unscored jobs found.");
-            return;
-        }
-
+        if (unscoredCount === 0) return toast.info("No unscored jobs found.");
         try {
-            const response = await fetch(`${API_BASE_URL}/generators/score_all`, {
-                method: 'POST',
-            });
-            if (response.ok) {
-                toast.info(`Starting bulk scoring for ${unscoredCount} jobs...`);
-            } else {
-                toast.error("Failed to start bulk scoring");
-            }
+            const response = await fetch(`${API_BASE_URL}/generators/score_all`, { method: 'POST' });
+            if (response.ok) toast.info(`Starting bulk scoring...`);
+            else toast.error("Failed to start bulk scoring");
         } catch (error) {
-            console.error(error);
             toast.error("Error starting bulk scoring");
         }
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-6rem)]">
-            <header className="mb-6 flex justify-between items-center">
+        <div className="flex flex-col h-[calc(100vh-6rem)] relative z-10">
+            <header className="mb-8 flex justify-between items-end">
                 <div>
-                    <h2 className="text-3xl font-bold text-slate-900">Job Board</h2>
-                    <p className="text-slate-500">Find and track your ideal positions</p>
+                    <h2 className="text-4xl font-black text-gradient uppercase tracking-tight">Job Board</h2>
+                    <p className="text-hsl(var(--foreground)/0.6) font-bold text-sm">Pipeline of potential career opportunities</p>
                 </div>
-                <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="md:hidden bg-white border border-slate-200 p-2 rounded-lg shadow-sm"
-                >
-                    <Filter className="w-5 h-5 text-slate-600" />
-                </button>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleScoreAll}
+                        className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-hsl(var(--primary)) text-hsl(var(--primary-foreground)) rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-hsl(var(--primary)/0.2)"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Score All
+                    </button>
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="md:hidden glass-card p-3 rounded-xl border border-hsl(var(--border)/0.2)"
+                    >
+                        <Filter className="w-5 h-5" />
+                    </button>
+                </div>
             </header>
 
-            <div className="flex gap-6 flex-1 overflow-hidden">
+            <div className="flex gap-8 flex-1 overflow-hidden relative z-10">
                 {/* Sidebar Filters */}
                 <aside className={`
-                    w-64 bg-white p-5 rounded-xl border border-slate-100 flex-shrink-0
-                    overflow-y-auto shadow-sm
-                    ${showFilters ? 'absolute inset-0 z-50 md:static' : 'hidden md:block'}
+                    w-72 glass-card p-8 rounded-[32px] flex-shrink-0
+                    overflow-y-auto relative z-20 border border-hsl(var(--border)/0.2)
+                    ${showFilters ? 'fixed inset-0 m-4 shadow-2xl z-50' : 'hidden md:block shadow-sm'}
                 `}>
-                    <div className="flex justify-between items-center mb-4 md:hidden">
-                        <h3 className="font-bold text-lg">Filters</h3>
-                        <button onClick={() => setShowFilters(false)} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+                    <div className="flex justify-between items-center mb-10 md:hidden">
+                        <h3 className="font-black text-2xl uppercase tracking-tighter">Refine</h3>
+                        <button onClick={() => setShowFilters(false)} className="p-3 bg-hsl(var(--primary)/0.1) text-hsl(var(--primary)) rounded-2xl transition-all">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Search</label>
-                            <div className="relative">
-                                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Role, Company..."
-                                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                    value={filters.query}
-                                    onChange={(e) => handleFilterChange('query', e.target.value)}
-                                />
-                            </div>
-                        </div>
+                    <div className="space-y-8">
+                        <FilterSection label="Keyword" icon={Search}>
+                            <input
+                                type="text"
+                                placeholder="Role, Company..."
+                                className="w-full px-5 py-3.5 bg-hsl(var(--background)/0.5) border border-hsl(var(--border)/0.2) rounded-2xl text-sm font-bold focus:ring-2 focus:ring-hsl(var(--primary)) outline-none transition-all placeholder:text-hsl(var(--foreground)/0.2)"
+                                value={filters.query}
+                                onChange={(e) => handleFilterChange('query', e.target.value)}
+                            />
+                        </FilterSection>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Location</label>
-                            <div className="relative">
-                                <MapPin className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="City or Country"
-                                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                    value={filters.location}
-                                    onChange={(e) => handleFilterChange('location', e.target.value)}
-                                />
-                            </div>
-                        </div>
+                        <FilterSection label="Location" icon={MapPin}>
+                            <input
+                                type="text"
+                                placeholder="City or Country"
+                                className="w-full px-5 py-3.5 bg-hsl(var(--background)/0.5) border border-hsl(var(--border)/0.2) rounded-2xl text-sm font-bold focus:ring-2 focus:ring-hsl(var(--primary)) outline-none transition-all placeholder:text-hsl(var(--foreground)/0.2)"
+                                value={filters.location}
+                                onChange={(e) => handleFilterChange('location', e.target.value)}
+                            />
+                        </FilterSection>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                        <FilterSection label="Application Status">
                             <select
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
+                                className="w-full px-5 py-3.5 bg-hsl(var(--background)/0.5) border border-hsl(var(--border)/0.2) rounded-2xl text-sm font-bold outline-none cursor-pointer focus:ring-2 focus:ring-hsl(var(--primary)) appearance-none"
                                 value={filters.status}
                                 onChange={(e) => handleFilterChange('status', e.target.value)}
                             >
@@ -207,30 +167,12 @@ export default function JobsPage() {
                                 <option value="scored">Scored</option>
                                 <option value="applied">Applied</option>
                                 <option value="interview">Interview</option>
-                                <option value="offer">Offer</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="cancelled">Cancelled</option>
                             </select>
-                        </div>
+                        </FilterSection>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Job Type</label>
+                        <FilterSection label="Job Source">
                             <select
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
-                                value={filters.job_type}
-                                onChange={(e) => handleFilterChange('job_type', e.target.value)}
-                            >
-                                <option value="">Any Type</option>
-                                <option value="remote">Remote</option>
-                                <option value="hybrid">Hybrid</option>
-                                <option value="onsite">On-site</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Job Source</label>
-                            <select
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
+                                className="w-full px-5 py-3.5 bg-hsl(var(--background)/0.5) border border-hsl(var(--border)/0.2) rounded-2xl text-sm font-bold outline-none cursor-pointer focus:ring-2 focus:ring-hsl(var(--primary)) appearance-none"
                                 value={filters.source}
                                 onChange={(e) => handleFilterChange('source', e.target.value)}
                             >
@@ -238,204 +180,165 @@ export default function JobsPage() {
                                 <option value="linkedin">LinkedIn</option>
                                 <option value="indeed">Indeed</option>
                                 <option value="naukri">Naukri</option>
-                                <option value="adzuna">Adzuna</option>
-                                <option value="findwork">Findwork</option>
-                                <option value="instahyre">Instahyre</option>
-                                <option value="wellfound">Wellfound</option>
-                                <option value="glassdoor">Glassdoor</option>
-                                <option value="Custom Search">Custom Search</option>
                             </select>
-                        </div>
-
-                        <div className="pt-4 border-t border-slate-100">
-                            <button
-                                onClick={handleScoreAll}
-                                className="w-full py-2.5 px-4 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                            >
-                                <RefreshCw className="w-4 h-4" />
-                                Rate All Unscored
-                            </button>
-                        </div>
+                        </FilterSection>
                     </div>
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto space-y-4 pr-1">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <span className="font-medium">Searching for opportunities...</span>
-                        </div>
-                    ) : jobs.length === 0 ? (
-                        <div className="text-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
-                            <Search className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold text-slate-900">No jobs found</h3>
-                            <p className="text-slate-500 mt-1">Try adjusting your filters or keywords</p>
-                        </div>
-                    ) : (
-                        jobs.map(job => (
-                            <JobCard
-                                key={job.id}
-                                job={job}
-                                onApply={() => job.id && handleApply(job.id)}
-                                onScore={() => job.id && handleScore(job.id)}
-                                onStatusUpdate={loadJobs}
-                            />
-                        ))
-                    )}
+                <main className="flex-1 overflow-y-auto space-y-6 pr-4 scrollbar-hide pb-10">
+                    <AnimatePresence mode="popLayout">
+                        {loading && jobs.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                className="flex flex-col items-center justify-center h-96 text-hsl(var(--foreground)/0.3)"
+                            >
+                                <div className="w-12 h-12 border-4 border-hsl(var(--primary)/0.1) border-t-hsl(var(--primary)) rounded-full animate-spin mb-6" />
+                                <span className="font-black uppercase tracking-widest text-xs">Syncing Discovery Stream...</span>
+                            </motion.div>
+                        ) : jobs.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                className="text-center py-32 glass-card rounded-[40px] border border-hsl(var(--border)/0.2)"
+                            >
+                                <Search className="w-20 h-20 text-hsl(var(--foreground)/0.05) mx-auto mb-6" />
+                                <h3 className="text-3xl font-black uppercase tracking-tighter">Empty Stream</h3>
+                                <p className="text-hsl(var(--foreground)/0.4) font-bold">Try broadening your discovery criteria.</p>
+                            </motion.div>
+                        ) : (
+                            jobs.map((job, idx) => (
+                                <JobCard
+                                    key={job.id}
+                                    job={job}
+                                    index={idx}
+                                    onApply={() => job.id && handleApply(job.id)}
+                                    onScore={() => job.id && handleScore(job.id)}
+                                    onStatusUpdate={loadJobs}
+                                />
+                            ))
+                        )}
+                    </AnimatePresence>
                 </main>
             </div>
         </div>
     );
 }
 
-function JobCard({ job, onApply, onScore, onStatusUpdate }: { job: Job, onApply?: () => void, onScore?: () => void, onStatusUpdate?: () => void }) {
+function FilterSection({ label, icon: Icon, children }: any) {
+    return (
+        <div className="space-y-4">
+            <label className="flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-hsl(var(--foreground)/0.4) ml-1">
+                {Icon && <Icon className="w-3.5 h-3.5 mr-2 opacity-50" />}
+                {label}
+            </label>
+            {children}
+        </div>
+    );
+}
+
+function JobCard({ job, index, onApply, onScore, onStatusUpdate }: any) {
     const handleStatusChange = async (newStatus: string) => {
         if (!job.id) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/jobs/${job.id}/status?status=${newStatus}`, { // Using query param as per API update
-                method: 'PUT',
-            });
+            const response = await fetch(`${API_BASE_URL}/jobs/${job.id}/status?status=${newStatus}`, { method: 'PUT' });
             if (response.ok) {
                 toast.success(`Status updated to ${newStatus}`);
-                onStatusUpdate?.(); // Refresh list
-            } else {
-                toast.error("Failed to update status");
+                onStatusUpdate?.();
             }
-        } catch (e) {
-            console.error(e);
-            toast.error("Error updating status");
-        }
+        } catch (e) { toast.error("Error updating status"); }
     };
 
-    const scoreColor = (job.match_score || 0) >= 8 ? 'text-green-600 bg-green-50 border-green-100' :
-        (job.match_score || 0) >= 6 ? 'text-yellow-600 bg-yellow-50 border-yellow-100' :
-            'text-slate-600 bg-slate-50 border-slate-100';
+    const isHighMatch = (job.match_score || 0) >= 8;
 
     return (
-        <div className={`bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all duration-300 group ${job.status === 'cancelled' ? 'opacity-60' : ''}`}>
-            <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className={`font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors truncate ${job.status === 'cancelled' ? 'line-through text-slate-400' : ''}`}>
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: 'spring', damping: 20 }}
+            className={`glass-card p-8 rounded-[32px] group relative overflow-hidden border border-hsl(var(--border)/0.1) ${job.status === 'cancelled' ? 'opacity-50 grayscale' : ''}`}
+        >
+            {isHighMatch && (
+                <div className="absolute top-0 right-0 w-64 h-64 bg-hsl(var(--primary)/0.05) blur-[100px] rounded-full -mr-32 -mt-32 pointer-events-none transition-transform group-hover:scale-150 duration-1000" />
+            )}
+
+            <div className="flex flex-col md:flex-row justify-between gap-8 relative z-10">
+                <div className="flex-1 space-y-6">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <h3 className="text-3xl font-black text-hsl(var(--foreground)) group-hover:text-hsl(var(--primary)) transition-colors leading-tight">
                             <a href={job.url} target="_blank" rel="noopener noreferrer">{job.title}</a>
                         </h3>
-                        {job.match_score && (
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex items-center border ${scoreColor}`}>
-                                <Star className="w-3 h-3 mr-1 fill-current" />
-                                {job.match_score.toFixed(1)}/10
-                            </span>
+                        {job.match_score ? (
+                            <div className={`flex items-center px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest ${isHighMatch ? 'bg-hsl(var(--primary)/0.1) text-hsl(var(--primary)) border-hsl(var(--primary)/0.2)' : 'bg-hsl(var(--foreground)/0.05) text-hsl(var(--foreground)/0.4) border-hsl(var(--border)/0.2)'
+                                }`}>
+                                <Star className={`w-3.5 h-3.5 mr-2 ${isHighMatch ? 'fill-hsl(var(--primary))' : ''}`} />
+                                {job.match_score.toFixed(1)} Match
+                            </div>
+                        ) : (
+                            <button onClick={onScore} className="text-[10px] font-black uppercase tracking-widest text-hsl(var(--primary)) hover:bg-hsl(var(--primary)/0.1) px-3 py-1 rounded-lg transition-all flex items-center">
+                                <BarChart3 className="w-3.5 h-3.5 mr-2" /> Score Required
+                            </button>
                         )}
-
-                        {/* Status Dropdown */}
-                        <select
-                            value={job.status}
-                            onChange={(e) => handleStatusChange(e.target.value)}
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize cursor-pointer outline-none focus:ring-1 focus:ring-blue-500 ${job.status === 'applied' ? 'border-green-200 text-green-700 bg-green-50' :
-                                job.status === 'interview' ? 'border-blue-200 text-blue-700 bg-blue-50' :
-                                    job.status === 'rejected' ? 'border-red-200 text-red-700 bg-red-50' :
-                                        job.status === 'offer' ? 'border-purple-200 text-purple-700 bg-purple-50' :
-                                            job.status === 'cancelled' ? 'border-slate-200 text-slate-500 bg-slate-100' :
-                                                'border-slate-200 text-slate-600 bg-slate-50'
-                                }`}
-                        >
-                            <option value="scraped">Scraped</option>
-                            <option value="scored">Scored</option>
-                            <option value="resume_generated">Resume Generated</option>
-                            <option value="applied">Applied</option>
-                            <option value="interview">Interview</option>
-                            <option value="offer">Offer</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-
-                        {job.source && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
-                                {job.source}
-                            </span>
-                        )}
+                        <span className="px-4 py-1.5 rounded-full text-[10px] font-black bg-hsl(var(--foreground)/0.05) text-hsl(var(--foreground)/0.4) border border-hsl(var(--border)/0.2) uppercase tracking-widest">
+                            {job.source}
+                        </span>
                     </div>
-                    <div className="flex flex-wrap items-center text-slate-500 text-sm gap-y-2 gap-x-5">
-                        <span className="flex items-center"><Building className="w-4 h-4 mr-1.5 text-slate-400" /> {job.company}</span>
-                        <span className="flex items-center"><MapPin className="w-4 h-4 mr-1.5 text-slate-400" /> {job.location || 'Remote'}</span>
-                        <span className="flex items-center capitalize"><Calendar className="w-4 h-4 mr-1.5 text-slate-400" /> {job.posted_date || 'Recently'}</span>
+
+                    <div className="flex flex-wrap items-center gap-y-3 gap-x-8 text-hsl(var(--foreground)/0.5) font-bold text-xs">
+                        <div className="flex items-center group/meta hover:text-hsl(var(--foreground)) transition-colors"><Building className="w-4 h-4 mr-2.5 opacity-30 group-hover/meta:opacity-100 transition-opacity" /> {job.company}</div>
+                        <div className="flex items-center group/meta hover:text-hsl(var(--foreground)) transition-colors"><MapPin className="w-4 h-4 mr-2.5 opacity-30 group-hover/meta:opacity-100 transition-opacity" /> {job.location || 'Remote'}</div>
+                        <div className="flex items-center group/meta hover:text-hsl(var(--foreground)) transition-colors"><Calendar className="w-4 h-4 mr-2.5 opacity-30 group-hover/meta:opacity-100 transition-opacity" /> {job.posted_date || 'New'}</div>
                     </div>
                 </div>
-                <div className="flex flex-col gap-2 ml-4">
+
+                <div className="flex flex-wrap md:flex-col gap-3 min-w-[180px]">
                     <button
-                        onClick={() => job.resume_path ? onApply?.() : toast.error("Generate resume first")}
+                        onClick={() => job.resume_path ? onApply?.() : toast.error("Generate documents first")}
                         disabled={job.status === 'applied' || job.status === 'cancelled'}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm text-center active:scale-95 ${job.status === 'applied' || job.status === 'cancelled'
-                            ? 'bg-slate-100 text-slate-400 cursor-default shadow-none'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        className={`w-full py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden group/btn ${job.status === 'applied'
+                            ? 'bg-hsl(var(--primary)/0.1) text-hsl(var(--primary)) cursor-default'
+                            : 'bg-hsl(var(--primary)) text-hsl(var(--primary-foreground)) shadow-2xl shadow-hsl(var(--primary)/0.3) hover:scale-[1.02] active:scale-95'
                             }`}
                     >
-                        {job.status === 'applied' ? 'Applied' : job.status === 'cancelled' ? 'Cancelled' : 'Auto Apply'}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+                        <span className="relative">{job.status === 'applied' ? 'Applied √' : 'Auto Apply'}</span>
                     </button>
-                    <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border border-slate-200 text-slate-600 hover:bg-slate-50 text-center active:scale-95 flex items-center justify-center gap-1.5"
-                    >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Manual Apply
-                    </a>
-                    {!job.match_score && (
-                        <button
-                            onClick={onScore}
-                            className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border border-blue-200 text-blue-600 hover:bg-blue-50 text-center active:scale-95 flex items-center justify-center gap-1.5"
-                        >
-                            <BarChart3 className="w-3.5 h-3.5" />
-                            Score Job
-                        </button>
-                    )}
-                    <GenerateButton
-                        jobId={job.id || 0}
-                        status={job.status}
-                        resumePath={job.resume_path}
-                        coverLetterPath={job.cover_letter_path}
-                    />
-                </div>
-            </div>
-            {job.salary_text && (
-                <div className="mt-4 text-sm font-medium text-slate-700 bg-slate-50 inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-100">
-                    <span className="mr-1.5">💰</span> {job.salary_text}
-                </div>
-            )}
 
-            {/* Contact & Application Info */}
-            {(job.recruiter_email || job.application_form_url) && (
-                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-4 items-center">
-                    {job.recruiter_email && (
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <span className="font-semibold text-slate-900">Contact:</span>
-                            <span>{job.recruiter_name || 'Recruiter'}</span>
-                            <a
-                                href={`mailto:${job.recruiter_email}?subject=Application for ${job.title}`}
-                                className="text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                                {job.recruiter_email}
-                                <ExternalLink className="w-3 h-3" />
-                            </a>
-                        </div>
-                    )}
-
-                    <div className="flex gap-2 ml-auto">
-                        {job.application_form_url && (
-                            <a
-                                href={job.application_form_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-md text-sm font-medium hover:bg-purple-100 border border-purple-200 flex items-center gap-1.5"
-                            >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                Open Form
-                            </a>
-                        )}
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                        <a href={job.url} target="_blank" className="flex items-center justify-center py-3 rounded-xl border border-hsl(var(--border)/0.2) hover:bg-hsl(var(--primary)/0.1) hover:text-hsl(var(--primary)) hover:border-hsl(var(--primary)/0.2) transition-all">
+                            <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <GenerateButton
+                            jobId={job.id || 0}
+                            status={job.status}
+                            resumePath={job.resume_path}
+                            coverLetterPath={job.cover_letter_path}
+                        />
                     </div>
                 </div>
-            )}
-        </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-4 items-center justify-between border-t border-hsl(var(--border)/0.1) pt-6">
+                <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-hsl(var(--foreground)/0.3) uppercase tracking-widest">Pipeline Matrix</span>
+                    <select
+                        value={job.status}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        className="text-[10px] font-black uppercase bg-hsl(var(--primary)/0.1) text-hsl(var(--primary)) px-4 py-2 rounded-xl outline-none cursor-pointer border border-hsl(var(--primary)/0.2) hover:bg-hsl(var(--primary)/0.2) transition-all appearance-none text-center min-w-[120px]"
+                    >
+                        <option value="scraped">Discovery</option>
+                        <option value="scored">Qualified</option>
+                        <option value="applied">Targeted</option>
+                        <option value="interview">Engaged</option>
+                        <option value="cancelled">Paused</option>
+                    </select>
+                </div>
+                {job.salary_text && (
+                    <div className="text-[11px] font-black text-hsl(var(--primary)) bg-hsl(var(--primary)/0.05) px-5 py-2.5 rounded-2xl border border-hsl(var(--primary)/0.2) shadow-sm">
+                        EST. <span className="text-hsl(var(--foreground)) ml-1">{job.salary_text}</span>
+                    </div>
+                )}
+            </div>
+        </motion.div>
     );
 }
