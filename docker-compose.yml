@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Force OLLAMA to use host address when running in Docker
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OUTPUT_DIR=/app/output
+      - DATA_DIR=/app/data
+      - CV_REF_PATH=/app/PRATIK-LAD-CV.pdf
+      # Usually best to run headless in Docker
+      - HEADLESS_AUTOMATION=true
+      # Disable browser profile for Docker as Windows paths won't work
+      - BROWSER_PROFILE_PATH=
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/credentials.json:/app/backend/credentials.json
+      # Map the output folder to the user's Downloads folder
+      - "${OUTPUT_DIR_HOST:-C:/Users/HP/Downloads/Job Automation output}:/app/output"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    restart: unless-stopped
